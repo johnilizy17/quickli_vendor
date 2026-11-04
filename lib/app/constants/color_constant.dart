@@ -25,6 +25,8 @@ class ColorConstant {
   static Color samantic     = fromHex('#1A1B2B');
   static Color black        = fromHex('#4B4C5E');
   static Color darkGrey     = fromHex('#808080');
+  static Color grey     = fromHex('#6A7282');
+  static Color lighengrey     = fromHex('#99A1AF');
   static Color deepGrey     = fromHex('#6B6C7E');
   static Color lightGrey    = fromHex('#D9D9D9');
   static Color lighterGrey  = fromHex('#F8F8F8');

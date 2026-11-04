@@ -64,7 +64,7 @@ class LoginView extends GetView<AuthController> {
 
                     // Email or phone number field
                     Text(
-                      'Email or phone number',
+                      'Email or phone number *',
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
@@ -151,7 +151,7 @@ class LoginView extends GetView<AuthController> {
 
                     // Password field
                     Text(
-                      'Password',
+                      'Password *',
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
@@ -254,8 +254,8 @@ class LoginView extends GetView<AuthController> {
                         Text(
                           "Don't have an account? ",
                           style: TextStyle(
-                            fontSize: 13.sp,
-                            color: ColorConstant.darkGrey,
+                            fontSize: 14.sp,
+                            color: ColorConstant.grey,
                           ),
                         ),
                         GestureDetector(
@@ -263,9 +263,9 @@ class LoginView extends GetView<AuthController> {
                           child: Text(
                             'Register',
                             style: TextStyle(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w600,
-                              color: ColorConstant.brandColor,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w700,
+                              color: ColorConstant.gradientStart,
                             ),
                           ),
                         ),
@@ -288,8 +288,8 @@ class LoginView extends GetView<AuthController> {
                         child: Text(
                           'Forgot your password?',
                           style: TextStyle(
-                            fontSize: 13.sp,
-                            color: ColorConstant.darkGrey,
+                            fontSize: 14.sp,
+                            color: ColorConstant.lighengrey,
                           ),
                         ),
                       ),

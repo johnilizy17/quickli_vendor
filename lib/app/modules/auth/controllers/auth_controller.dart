@@ -9,6 +9,7 @@ import '../../../services/main_storage.dart';
 import '../../../utils/app_logger.dart';
 import '../views/verify_phone_view.dart';
 import '../views/verify_email_view.dart';
+import '../views/business_docs_view.dart';
 
 class AuthController extends GetxController {
   final phoneController = TextEditingController();
@@ -275,8 +276,16 @@ class AuthController extends GetxController {
               colorText: Colors.white,
             );
             
-            // Check if email is verified
+            // Check verification status and route accordingly
             final emailVerified = userData['emailVerified'] ?? false;
+            final verification = userData['verification'];
+            final kycStatus = verification?['kycStatus'] ?? 'pending';
+            final isFullyVerified = verification?['isFullyVerified'] ?? false;
+            
+            // Priority routing logic:
+            // 1. Email not verified → Email Verification
+            // 2. Email verified + Not fully verified → Business Documents/KYC
+            // 3. Fully verified → Main App
             
             if (!emailVerified) {
               // Navigate to email verification
@@ -285,18 +294,13 @@ class AuthController extends GetxController {
                 () => const VerifyEmailView(),
                 arguments: {'email': userData['email']},
               );
+            } else if (!isFullyVerified) {
+              // Email verified but business documents/KYC not complete
+              // Navigate to business documents upload
+              Get.off(() => const BusinessDocsView());
             } else {
-              // Navigate based on verification status
-              final verification = userData['verification'];
-              final kycStatus = verification?['kycStatus'] ?? 'pending';
-              final isFullyVerified = verification?['isFullyVerified'] ?? false;
-              
-              if (isFullyVerified || kycStatus == 'verified') {
-                Get.offAllNamed(Routes.WRAPPER);
-              } else {
-                // Need to complete onboarding/KYC
-                Get.offAllNamed(Routes.AUTH);
-              }
+              // Fully verified - go to main app
+              Get.offAllNamed(Routes.WRAPPER);
             }
           }
         } else {
@@ -754,11 +758,13 @@ class AuthController extends GetxController {
           final kycStatus = verification?['kycStatus'] ?? 'pending';
           final isFullyVerified = verification?['isFullyVerified'] ?? false;
           
-          if (isFullyVerified || kycStatus == 'verified') {
+          if (isFullyVerified) {
+            // Fully verified - go to main app
             Get.offAllNamed(Routes.WRAPPER);
           } else {
-            // Need to complete onboarding/KYC
-            Get.offAllNamed(Routes.AUTH);
+            // Email verified but business documents/KYC not complete
+            // Navigate to business documents upload
+            Get.off(() => const BusinessDocsView());
           }
         } else {
           errorText.value = data['message'] ?? 'Verification failed';

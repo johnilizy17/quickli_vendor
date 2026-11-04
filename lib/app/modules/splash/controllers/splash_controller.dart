@@ -6,6 +6,7 @@ import '../../../routes/app_pages.dart';
 import '../../../services/api_service.dart';
 import '../../../services/main_storage.dart';
 import '../../../utils/app_logger.dart';
+import '../../auth/views/business_docs_view.dart';
 
 class SplashController extends GetxController {
   final isLoading = true.obs;
@@ -106,9 +107,9 @@ class SplashController extends GetxController {
             appLog('SplashController: Verification pending - navigating to verification pending view');
             Get.offAllNamed(Routes.VERIFICATION_PENDING);
           } else {
-            // Incomplete onboarding or rejected - needs to complete registration
-            appLog('SplashController: Onboarding incomplete - navigating to auth');
-            Get.offAllNamed(Routes.AUTH);
+            // Incomplete onboarding or verification - needs to complete business documents
+            appLog('SplashController: Verification incomplete - navigating to business docs');
+            Get.off(() => const BusinessDocsView());
           }
         } else {
           // Invalid response - redirect to auth
