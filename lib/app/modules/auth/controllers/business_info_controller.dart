@@ -1,8 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../services/file_upload_service.dart';
+import '../../../services/registration_api_service.dart';
 
 class BusinessInfoController extends GetxController {
   final formKey = GlobalKey<FormState>();
+  final _fileUploadService = FileUploadService();
+  final _apiService = RegistrationApiService();
 
   // Controllers
   final businessNameController = TextEditingController();
@@ -17,8 +22,10 @@ class BusinessInfoController extends GetxController {
   // Observable fields
   final businessType = ''.obs;
   final logoPath = ''.obs;
+  final logoFile = Rxn<File>();
   final openTime = '09:00 AM'.obs;
   final closeTime = '09:00 PM'.obs;
+  final isUploading = false.obs;
 
   @override
   void onInit() {
@@ -44,12 +51,14 @@ class BusinessInfoController extends GetxController {
   }
 
   Future<void> pickLogo() async {
-    // TODO: Implement image picker
-    Get.snackbar(
-      'Info',
-      'Image picker not implemented yet',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    final file = await _fileUploadService.pickImageWithOptions(crop: true);
+    if (file != null) {
+      // Validate file size (max 5MB for logo)
+      if (_fileUploadService.validateFileSize(file, maxSizeMB: 5)) {
+        logoFile.value = file;
+        logoPath.value = file.path;
+      }
+    }
   }
 
   Future<void> selectOpenTime(BuildContext context) async {
@@ -92,7 +101,18 @@ class BusinessInfoController extends GetxController {
         barrierDismissible: false,
       );
 
-      // TODO: Save to API
+      // Upload logo if selected
+      String? uploadedLogoUrl;
+      if (logoFile.value != null) {
+        isUploading.value = true;
+        uploadedLogoUrl = await _apiService.uploadFile(
+          logoFile.value!,
+          folder: 'business_logos',
+        );
+        isUploading.value = false;
+      }
+
+      // Prepare data
       final data = {
         'businessType': businessType.value,
         'businessName': businessNameController.text,
@@ -109,24 +129,33 @@ class BusinessInfoController extends GetxController {
           'open': openTime.value,
           'close': closeTime.value,
         },
-        'logo': logoPath.value,
+        if (uploadedLogoUrl != null) 'logo': uploadedLogoUrl,
       };
 
-      await Future.delayed(const Duration(seconds: 2));
+      // Save to API
+      final response = await _apiService.saveBusinessInfo(data);
 
       Get.back(); // Close loading dialog
-      Get.back(); // Go back to registration screen
-      
-      Get.snackbar(
-        'Success',
-        'Business information saved successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+
+      if (response != null) {
+        Get.back(); // Go back to registration screen
+        Get.snackbar(
+          'Success',
+          'Business information saved successfully',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to save business information',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
     } catch (e) {
       Get.back(); // Close loading dialog
       Get.snackbar(
         'Error',
-        'Failed to save business information',
+        'Failed to save business information: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
       );
     }

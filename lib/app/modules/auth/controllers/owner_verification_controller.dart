@@ -1,9 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../services/file_upload_service.dart';
+import '../../../services/registration_api_service.dart';
 
 class OwnerVerificationController extends GetxController {
   final formKey = GlobalKey<FormState>();
+  final _fileUploadService = FileUploadService();
+  final _apiService = RegistrationApiService();
 
   // Controllers
   final fullNameController = TextEditingController();
@@ -15,6 +20,10 @@ class OwnerVerificationController extends GetxController {
   final idFrontPath = ''.obs;
   final idBackPath = ''.obs;
   final selfiePath = ''.obs;
+  final idFrontFile = Rxn<File>();
+  final idBackFile = Rxn<File>();
+  final selfieFile = Rxn<File>();
+  final isUploading = false.obs;
   DateTime? selectedDob;
 
   @override
@@ -49,33 +58,48 @@ class OwnerVerificationController extends GetxController {
   }
 
   Future<void> uploadIdFront() async {
-    // TODO: Implement image picker
-    idFrontPath.value = 'https://example.com/id_front.jpg'; // Mock
-    Get.snackbar(
-      'Success',
-      'ID front uploaded successfully',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    final file = await _fileUploadService.pickImageWithOptions(crop: false);
+    if (file != null) {
+      if (_fileUploadService.validateFileSize(file, maxSizeMB: 10)) {
+        idFrontFile.value = file;
+        idFrontPath.value = file.path;
+        Get.snackbar(
+          'Success',
+          'ID front selected successfully',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    }
   }
 
   Future<void> uploadIdBack() async {
-    // TODO: Implement image picker
-    idBackPath.value = 'https://example.com/id_back.jpg'; // Mock
-    Get.snackbar(
-      'Success',
-      'ID back uploaded successfully',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    final file = await _fileUploadService.pickImageWithOptions(crop: false);
+    if (file != null) {
+      if (_fileUploadService.validateFileSize(file, maxSizeMB: 10)) {
+        idBackFile.value = file;
+        idBackPath.value = file.path;
+        Get.snackbar(
+          'Success',
+          'ID back selected successfully',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    }
   }
 
   Future<void> uploadSelfie() async {
-    // TODO: Implement camera or image picker
-    selfiePath.value = 'https://example.com/selfie.jpg'; // Mock
-    Get.snackbar(
-      'Success',
-      'Selfie uploaded successfully',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    final file = await _fileUploadService.pickImageWithOptions(crop: false);
+    if (file != null) {
+      if (_fileUploadService.validateFileSize(file, maxSizeMB: 10)) {
+        selfieFile.value = file;
+        selfiePath.value = file.path;
+        Get.snackbar(
+          'Success',
+          'Selfie selected successfully',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    }
   }
 
   Future<void> saveVerification() async {
@@ -92,9 +116,9 @@ class OwnerVerificationController extends GetxController {
       return;
     }
 
-    if (idFrontPath.value.isEmpty ||
-        idBackPath.value.isEmpty ||
-        selfiePath.value.isEmpty) {
+    if (idFrontFile.value == null ||
+        idBackFile.value == null ||
+        selfieFile.value == null) {
       Get.snackbar(
         'Error',
         'Please upload all required documents',
@@ -109,34 +133,66 @@ class OwnerVerificationController extends GetxController {
         barrierDismissible: false,
       );
 
-      // TODO: Save to API
+      isUploading.value = true;
+
+      // Upload documents
+      final idFrontUrl = await _apiService.uploadFile(
+        idFrontFile.value!,
+        folder: 'verification/id_front',
+      );
+      final idBackUrl = await _apiService.uploadFile(
+        idBackFile.value!,
+        folder: 'verification/id_back',
+      );
+      final selfieUrl = await _apiService.uploadFile(
+        selfieFile.value!,
+        folder: 'verification/selfie',
+      );
+
+      isUploading.value = false;
+
+      if (idFrontUrl == null || idBackUrl == null || selfieUrl == null) {
+        throw Exception('Failed to upload documents');
+      }
+
+      // Prepare data
       final data = {
         'fullName': fullNameController.text,
         'dateOfBirth': selectedDob?.toIso8601String(),
         'idType': idType.value,
         'idNumber': idNumberController.text,
         'documents': {
-          'idFront': idFrontPath.value,
-          'idBack': idBackPath.value,
-          'selfie': selfiePath.value,
+          'idFront': idFrontUrl,
+          'idBack': idBackUrl,
+          'selfie': selfieUrl,
         },
       };
 
-      await Future.delayed(const Duration(seconds: 2));
+      // Save to API
+      final response = await _apiService.saveOwnerVerification(data);
 
       Get.back(); // Close loading dialog
-      Get.back(); // Go back to registration screen
 
-      Get.snackbar(
-        'Success',
-        'Verification documents submitted successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      if (response != null) {
+        Get.back(); // Go back to registration screen
+        Get.snackbar(
+          'Success',
+          'Verification documents submitted successfully',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to submit verification documents',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
     } catch (e) {
+      isUploading.value = false;
       Get.back(); // Close loading dialog
       Get.snackbar(
         'Error',
-        'Failed to submit verification documents',
+        'Failed to submit verification documents: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
       );
     }
