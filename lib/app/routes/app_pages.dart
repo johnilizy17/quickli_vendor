@@ -6,6 +6,12 @@ import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/auth_view.dart';
 import '../modules/auth/views/verification_view.dart';
 import '../modules/auth/views/verification_pending_view.dart';
+import '../modules/auth/views/business_registration_view.dart';
+import '../modules/auth/views/business_info_view.dart';
+import '../modules/auth/views/owner_verification_view.dart';
+import '../modules/auth/views/business_docs_view.dart';
+import '../modules/auth/views/bank_account_view.dart';
+import '../modules/auth/views/tax_info_view.dart';
 import '../modules/wrapper/bindings/wrapper_binding.dart';
 import '../modules/wrapper/views/wrapper_view.dart';
 import '../modules/home/bindings/home_binding.dart';
@@ -52,6 +58,36 @@ class AppPages {
     GetPage(
       name: _Paths.VERIFICATION_PENDING,
       page: () => const VerificationPendingView(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: _Paths.BUSINESS_REGISTRATION,
+      page: () => const BusinessRegistrationView(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: _Paths.BUSINESS_INFO,
+      page: () => const BusinessInfoView(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: _Paths.OWNER_VERIFICATION,
+      page: () => const OwnerVerificationView(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: _Paths.BUSINESS_DOCS,
+      page: () => const BusinessDocsView(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: _Paths.BANK_ACCOUNT,
+      page: () => const BankAccountView(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: _Paths.TAX_INFO,
+      page: () => const TaxInfoView(),
       binding: AuthBinding(),
     ),
     GetPage(
