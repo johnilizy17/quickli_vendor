@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../constants/color_constant.dart';
@@ -65,12 +66,6 @@ class SignupView extends GetView<AuthController> {
                               SizedBox(height: 8.h),
                               TextFormField(
                                 controller: controller.firstNameController,
-                                onChanged: (value) {
-                                  // Clear error when user types
-                                  if (controller.firstNameError.value.isNotEmpty) {
-                                    controller.firstNameError.value = '';
-                                  }
-                                },
                                 decoration: InputDecoration(
                                   hintText: 'Lena',
                                   hintStyle: TextStyle(
@@ -159,6 +154,7 @@ class SignupView extends GetView<AuthController> {
                               ),
                               SizedBox(height: 8.h),
                               TextFormField(
+                                controller: controller.lastNameController,
                                 decoration: InputDecoration(
                                   hintText: 'Okonkwo',
                                   hintStyle: TextStyle(
@@ -192,8 +188,34 @@ class SignupView extends GetView<AuthController> {
                                       width: 1.5,
                                     ),
                                   ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                      width: 1.5,
+                                    ),
+                                  ),
                                 ),
                               ),
+                              Obx(() => controller.lastNameError.value.isNotEmpty
+                                  ? Padding(
+                                      padding: EdgeInsets.only(top: 4.h, left: 4.w),
+                                      child: Text(
+                                        controller.lastNameError.value,
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink()),
                             ],
                           ),
                         ),
@@ -221,6 +243,7 @@ class SignupView extends GetView<AuthController> {
                     ),
                     SizedBox(height: 8.h),
                     TextFormField(
+                      controller: controller.emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         hintText: 'lena@harbourtown.ng',
@@ -234,6 +257,35 @@ class SignupView extends GetView<AuthController> {
                           horizontal: 16.w,
                           vertical: 14.h,
                         ),
+                        suffixIcon: Obx(() {
+                          if (controller.isCheckingEmail.value) {
+                            return Padding(
+                              padding: EdgeInsets.all(12.w),
+                              child: SizedBox(
+                                width: 20.w,
+                                height: 20.w,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    ColorConstant.brandColor,
+                                  ),
+                                ),
+                              ),
+                            );
+                          } else if (controller.emailController.text.isNotEmpty &&
+                              GetUtils.isEmail(controller.emailController.text.trim())) {
+                            return Icon(
+                              controller.emailAvailable.value
+                                  ? Icons.check_circle
+                                  : Icons.cancel,
+                              color: controller.emailAvailable.value
+                                  ? const Color(0xFF00C853)
+                                  : Colors.red,
+                              size: 20.sp,
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        }),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
                           borderSide: BorderSide(
@@ -287,7 +339,11 @@ class SignupView extends GetView<AuthController> {
                     ),
                     SizedBox(height: 8.h),
                     TextFormField(
+                      controller: controller.phoneNumberController,
                       keyboardType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+                      ],
                       decoration: InputDecoration(
                         hintText: '+2348123456789',
                         hintStyle: TextStyle(
@@ -353,6 +409,7 @@ class SignupView extends GetView<AuthController> {
                     ),
                     SizedBox(height: 8.h),
                     Obx(() => TextFormField(
+                      controller: controller.passwordController,
                       obscureText: controller.obscurePassword.value,
                       decoration: InputDecoration(
                         hintText: 'Inlook',
@@ -402,17 +459,79 @@ class SignupView extends GetView<AuthController> {
                         ),
                       ),
                     )),
-                    SizedBox(height: 6.h),
-                    Text(
-                      'Too weak',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.red,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    // Password strength indicator
+                    Obx(() {
+                      if (controller.passwordStrength.value.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      
+                      int activeLines = 0;
+                      Color barColor = Colors.transparent;
+                      
+                      if (controller.passwordStrength.value == 'Too weak') {
+                        activeLines = 1;
+                        barColor = Colors.red;
+                      } else if (controller.passwordStrength.value == 'Weak') {
+                        activeLines = 2;
+                        barColor = const Color(0xFFFFA500); // Orange
+                      } else if (controller.passwordStrength.value == 'Good') {
+                        activeLines = 3;
+                        barColor = const Color(0xFF90EE90); // Light green
+                      } else if (controller.passwordStrength.value == 'Strong') {
+                        activeLines = 4;
+                        barColor = const Color(0xFF00C853); // Green
+                      }
+                      
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 8.h),
+                          // Four strength bars
+                          Row(
+                            children: List.generate(4, (index) {
+                              return Expanded(
+                                child: Container(
+                                  height: 4.h,
+                                  margin: EdgeInsets.only(
+                                    right: index < 3 ? 6.w : 0,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: index < activeLines 
+                                        ? barColor 
+                                        : ColorConstant.lightestGrey,
+                                    borderRadius: BorderRadius.circular(2.r),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                          SizedBox(height: 6.h),
+                          Text(
+                            controller.passwordStrength.value,
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: controller.passwordStrengthColor.value,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                    // Password error
+                    Obx(() => controller.passwordError.value.isNotEmpty
+                        ? Padding(
+                            padding: EdgeInsets.only(top: 4.h, left: 4.w),
+                            child: Text(
+                              controller.passwordError.value,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Colors.red,
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink()),
                     
-                    SizedBox(height: 20.h),
+                    SizedBox(height: 6.h),
                     
                     // Terms and Privacy
                     RichText(
@@ -463,35 +582,42 @@ class SignupView extends GetView<AuthController> {
                   ),
                 ],
               ),
-              child: GestureDetector(
-                onTap: () {
-                  // TODO: Handle signup
-                  Get.snackbar(
-                    'Sign Up',
-                    'Sign up functionality coming soon',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: ColorConstant.brandColor,
-                    colorText: Colors.white,
-                  );
+              child: Obx(() => GestureDetector(
+                onTap: controller.isLoading.value ? null : () {
+                  // Validate and submit form
+                  controller.signup();
                 },
                 child: Container(
                   width: double.infinity,
                   height: 56.h,
                   decoration: BoxDecoration(
-                    color: ColorConstant.brandColor,
+                    color: controller.isLoading.value
+                        ? ColorConstant.brandColor.withOpacity(0.6)
+                        : ColorConstant.brandColor,
                     borderRadius: BorderRadius.circular(16.r),
                   ),
                   alignment: Alignment.center,
-                  child: Text(
-                    'Continue',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: controller.isLoading.value
+                      ? SizedBox(
+                          width: 24.w,
+                          height: 24.w,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          'Continue',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
-              ),
+              )),
             ),
           ],
         ),

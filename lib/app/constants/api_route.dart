@@ -2,10 +2,12 @@ class ApiRoute {
   // Auth
   static const requestOtp  = '/vendors/auth/login/request-code';
   static const verifyOtp   = '/vendors/auth/login';
+  static const signup      = '/vendors/auth/signup';
   static const setupAccount= '/vendors/auth/setup-account';
   static const refreshAuth = '/vendors/auth/refresh-token';
   static const userProfile = '/vendors/my-profile';
   static const updateProfile = '/vendors/update';
+  static const checkEmailAvailability = '/vendors/auth/check-email';
 
   // Orders
   static const getOrders        = '/vendors/orders';
