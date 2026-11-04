@@ -8,6 +8,7 @@ import '../../../services/api_service.dart';
 import '../../../services/main_storage.dart';
 import '../../../utils/app_logger.dart';
 import '../views/verify_phone_view.dart';
+import '../views/verify_email_view.dart';
 
 class AuthController extends GetxController {
   final phoneController = TextEditingController();
@@ -17,18 +18,28 @@ class AuthController extends GetxController {
   final phoneNumberController = TextEditingController();
   final passwordController = TextEditingController();
   final otpController = TextEditingController();
+  final emailOtpController = TextEditingController();
+  final loginUsernameController = TextEditingController();
+  final loginPasswordController = TextEditingController();
   
   final otpFocusNode = FocusNode();
+  final emailOtpFocusNode = FocusNode();
   
   final isAuthEmail    = false.obs;
   final isLoading      = false.obs;
   final errorText      = ''.obs;
   final obscurePassword = true.obs;
+  final obscureLoginPassword = true.obs;
   
   // OTP resend timer
   final canResendOtp = false.obs;
   final resendTimer = 60.obs;
   Timer? _resendTimer;
+  
+  // Email OTP resend timer
+  final canResendEmailOtp = false.obs;
+  final resendEmailTimer = 60.obs;
+  Timer? _resendEmailTimer;
   
   // Form validation
   final firstNameError = ''.obs;
@@ -36,6 +47,8 @@ class AuthController extends GetxController {
   final emailError = ''.obs;
   final phoneError = ''.obs;
   final passwordError = ''.obs;
+  final loginUsernameError = ''.obs;
+  final loginPasswordError = ''.obs;
   
   // Email availability check
   final isCheckingEmail = false.obs;
@@ -184,6 +197,153 @@ class AuthController extends GetxController {
     }
   }
   
+  bool validateLoginForm() {
+    bool isValid = true;
+    
+    // Clear previous errors
+    loginUsernameError.value = '';
+    loginPasswordError.value = '';
+    
+    // Username (email or phone) validation
+    final username = loginUsernameController.text.trim();
+    if (username.isEmpty) {
+      loginUsernameError.value = 'Email or phone number is required';
+      isValid = false;
+    }
+    
+    // Password validation
+    final password = loginPasswordController.text;
+    if (password.isEmpty) {
+      loginPasswordError.value = 'Password is required';
+      isValid = false;
+    }
+    
+    return isValid;
+  }
+  
+  Future<void> login() async {
+    // Validate form
+    if (!validateLoginForm()) {
+      return;
+    }
+    
+    isLoading.value = true;
+    errorText.value = '';
+    
+    try {
+      final username = loginUsernameController.text.trim();
+      final isEmail = GetUtils.isEmail(username);
+      
+      final response = await ApiService.to.post(
+        ApiRoute.login,
+        data: {
+          'username': username,
+          'method': isEmail ? 'email' : 'phone',
+          'password': loginPasswordController.text,
+        },
+      );
+      
+      appLog('Login response: ${response.data}');
+      
+      if (response.statusCode == 200) {
+        final data = response.data;
+        
+        if (data['status'] == 'success' && data['data'] != null) {
+          final userData = data['data'];
+          
+          // Save tokens
+          final accessToken = userData['accessToken'];
+          final refreshToken = userData['refreshToken'];
+          
+          if (accessToken != null && refreshToken != null) {
+            ApiService.to.setTokens(
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+            );
+            
+            // Save user data
+            VendorUser.setUser(userData);
+            
+            // Mark onboarding as completed
+            MainStorage.saveOnboardingCompleted(true);
+            
+            Get.snackbar(
+              'Success',
+              'Login successful!',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: const Color(0xFF00C853),
+              colorText: Colors.white,
+            );
+            
+            // Check if email is verified
+            final emailVerified = userData['emailVerified'] ?? false;
+            
+            if (!emailVerified) {
+              // Navigate to email verification
+              _startResendEmailTimer();
+              Get.off(
+                () => const VerifyEmailView(),
+                arguments: {'email': userData['email']},
+              );
+            } else {
+              // Navigate based on verification status
+              final verification = userData['verification'];
+              final kycStatus = verification?['kycStatus'] ?? 'pending';
+              final isFullyVerified = verification?['isFullyVerified'] ?? false;
+              
+              if (isFullyVerified || kycStatus == 'verified') {
+                Get.offAllNamed(Routes.WRAPPER);
+              } else {
+                // Need to complete onboarding/KYC
+                Get.offAllNamed(Routes.AUTH);
+              }
+            }
+          }
+        } else {
+          errorText.value = data['message'] ?? 'Login failed. Please try again.';
+          Get.snackbar(
+            'Error',
+            errorText.value,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
+      } else {
+        errorText.value = 'Login failed. Please check your credentials.';
+        Get.snackbar(
+          'Error',
+          errorText.value,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      appLog('Login error: $e');
+      
+      // Parse error message
+      String errorMessage = 'An error occurred. Please try again.';
+      
+      if (e.toString().contains('Invalid') || e.toString().contains('credentials')) {
+        errorMessage = 'Invalid email/phone or password';
+      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      errorText.value = errorMessage;
+      Get.snackbar(
+        'Error',
+        errorMessage,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+  
   bool validateSignupForm() {
     bool isValid = true;
     
@@ -285,22 +445,22 @@ class AuthController extends GetxController {
         final data = response.data;
         
         if (data['status'] == 'success') {
-          // Signup successful - navigate to phone verification
+          // Signup successful - navigate to email verification
           Get.snackbar(
             'Success',
-            'Please verify your phone number',
+            'Please verify your email address',
             snackPosition: SnackPosition.BOTTOM,
             backgroundColor: const Color(0xFF00C853),
             colorText: Colors.white,
           );
           
-          // Start resend timer
-          _startResendTimer();
+          // Start email resend timer
+          _startResendEmailTimer();
           
-          // Navigate to OTP verification
+          // Navigate to email verification
           Get.to(
-            () => const VerifyPhoneView(),
-            arguments: {'phone': phoneNumberController.text.trim()},
+            () => const VerifyEmailView(),
+            arguments: {'email': emailController.text.trim()},
           );
         } else {
           errorText.value = data['message'] ?? 'Signup failed. Please try again.';
@@ -372,7 +532,7 @@ class AuthController extends GetxController {
     
     try {
       final response = await ApiService.to.post(
-        ApiRoute.verifyOtp,
+        ApiRoute.verifyPhone,
         data: {
           'phone': phoneNumberController.text.trim(),
           'code': code,
@@ -445,10 +605,22 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       appLog('Verify phone error: $e');
-      errorText.value = 'Verification failed. Please try again.';
+      
+      // Parse error message
+      String errorMessage = 'Verification failed. Please try again.';
+      
+      if (e.toString().contains('invalid') || e.toString().contains('code')) {
+        errorMessage = 'Invalid verification code. Please try again.';
+      } else if (e.toString().contains('expired')) {
+        errorMessage = 'Verification code has expired. Please request a new one.';
+      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      errorText.value = errorMessage;
       Get.snackbar(
         'Error',
-        errorText.value,
+        errorMessage,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -462,17 +634,23 @@ class AuthController extends GetxController {
     if (!canResendOtp.value) return;
     
     try {
+      isLoading.value = true;
+      
       final response = await ApiService.to.post(
-        ApiRoute.requestOtp,
+        ApiRoute.resendPhoneOTP,
         data: {
           'phone': phoneNumberController.text.trim(),
         },
       );
       
+      appLog('Resend OTP response: ${response.data}');
+      
       if (response.statusCode == 200) {
+        final data = response.data;
+        
         Get.snackbar(
           'Success',
-          'Verification code sent',
+          data['message'] ?? 'Verification code sent',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: const Color(0xFF00C853),
           colorText: Colors.white,
@@ -480,16 +658,213 @@ class AuthController extends GetxController {
         
         // Restart timer
         _startResendTimer();
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to resend code. Please try again.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       }
     } catch (e) {
       appLog('Resend OTP error: $e');
+      
+      // Parse error message
+      String errorMessage = 'Failed to resend code';
+      
+      if (e.toString().contains('network') || e.toString().contains('connection')) {
+        errorMessage = 'Network error. Please check your connection.';
+      } else if (e.toString().contains('limit') || e.toString().contains('too many')) {
+        errorMessage = 'Too many requests. Please try again later.';
+      }
+      
       Get.snackbar(
         'Error',
-        'Failed to resend code',
+        errorMessage,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void _startResendEmailTimer() {
+    canResendEmailOtp.value = false;
+    resendEmailTimer.value = 60;
+    
+    _resendEmailTimer?.cancel();
+    _resendEmailTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (resendEmailTimer.value > 0) {
+        resendEmailTimer.value--;
+      } else {
+        canResendEmailOtp.value = true;
+        timer.cancel();
+      }
+    });
+  }
+  
+  Future<void> verifyEmail(String code) async {
+    isLoading.value = true;
+    errorText.value = '';
+    
+    try {
+      final response = await ApiService.to.post(
+        ApiRoute.verifyEmail,
+        data: {
+          'email': emailController.text.trim(),
+          'code': code,
+        },
+      );
+      
+      appLog('Verify email response: ${response.data}');
+      
+      if (response.statusCode == 200) {
+        final data = response.data;
+        
+        if (data['status'] == 'success' && data['data'] != null) {
+          final userData = data['data'];
+          
+          // Update tokens if new ones are provided
+          final accessToken = userData['accessToken'];
+          final refreshToken = userData['refreshToken'];
+          
+          if (accessToken != null && refreshToken != null) {
+            ApiService.to.setTokens(
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+            );
+          }
+          
+          // Save user data
+          VendorUser.setUser(userData);
+          
+          Get.snackbar(
+            'Success',
+            'Email verified successfully!',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xFF00C853),
+            colorText: Colors.white,
+          );
+          
+          // Navigate based on verification status
+          final verification = userData['verification'];
+          final kycStatus = verification?['kycStatus'] ?? 'pending';
+          final isFullyVerified = verification?['isFullyVerified'] ?? false;
+          
+          if (isFullyVerified || kycStatus == 'verified') {
+            Get.offAllNamed(Routes.WRAPPER);
+          } else {
+            // Need to complete onboarding/KYC
+            Get.offAllNamed(Routes.AUTH);
+          }
+        } else {
+          errorText.value = data['message'] ?? 'Verification failed';
+          Get.snackbar(
+            'Error',
+            errorText.value,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
+      } else {
+        errorText.value = 'Invalid verification code';
+        Get.snackbar(
+          'Error',
+          errorText.value,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      appLog('Verify email error: $e');
+      
+      // Parse error message
+      String errorMessage = 'Verification failed. Please try again.';
+      
+      if (e.toString().contains('invalid') || e.toString().contains('code')) {
+        errorMessage = 'Invalid verification code. Please try again.';
+      } else if (e.toString().contains('expired')) {
+        errorMessage = 'Verification code has expired. Please request a new one.';
+      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      errorText.value = errorMessage;
+      Get.snackbar(
+        'Error',
+        errorMessage,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+  
+  Future<void> resendEmailOtp() async {
+    if (!canResendEmailOtp.value) return;
+    
+    try {
+      isLoading.value = true;
+      
+      final response = await ApiService.to.post(
+        ApiRoute.resendEmailOTP,
+        data: {
+          'email': emailController.text.trim(),
+        },
+      );
+      
+      appLog('Resend email OTP response: ${response.data}');
+      
+      if (response.statusCode == 200) {
+        final data = response.data;
+        
+        Get.snackbar(
+          'Success',
+          data['message'] ?? 'Verification code sent to your email',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFF00C853),
+          colorText: Colors.white,
+        );
+        
+        // Restart timer
+        _startResendEmailTimer();
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to resend code. Please try again.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      appLog('Resend email OTP error: $e');
+      
+      // Parse error message
+      String errorMessage = 'Failed to resend code';
+      
+      if (e.toString().contains('network') || e.toString().contains('connection')) {
+        errorMessage = 'Network error. Please check your connection.';
+      } else if (e.toString().contains('limit') || e.toString().contains('too many')) {
+        errorMessage = 'Too many requests. Please try again later.';
+      }
+      
+      Get.snackbar(
+        'Error',
+        errorMessage,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -504,9 +879,14 @@ class AuthController extends GetxController {
     phoneNumberController.dispose();
     passwordController.dispose();
     otpController.dispose();
+    emailOtpController.dispose();
+    loginUsernameController.dispose();
+    loginPasswordController.dispose();
     otpFocusNode.dispose();
+    emailOtpFocusNode.dispose();
     _emailCheckDebounce?.cancel();
     _resendTimer?.cancel();
+    _resendEmailTimer?.cancel();
     super.onClose();
   }
 }

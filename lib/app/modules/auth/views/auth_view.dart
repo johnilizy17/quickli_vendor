@@ -5,6 +5,7 @@ import '../../../constants/color_constant.dart';
 import '../../../constants/image_constant.dart';
 import '../controllers/auth_controller.dart';
 import 'signup_view.dart';
+import 'login_view.dart';
 
 class AuthView extends GetView<AuthController> {
   const AuthView({super.key});
@@ -89,14 +90,8 @@ class AuthView extends GetView<AuthController> {
                     // Login Button
                     GestureDetector(
                       onTap: () {
-                        // TODO: Navigate to login
-                        Get.snackbar(
-                          'Login',
-                          'Login functionality coming soon',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: ColorConstant.brandColor,
-                          colorText: Colors.white,
-                        );
+                        // Navigate to login
+                        Get.to(() => const LoginView());
                       },
                       child: Container(
                         width: double.infinity,

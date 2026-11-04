@@ -5,4 +5,5 @@ class ImageConstant {
   static const empty      = 'asset/img/empty.png';
   static const defaultImg = 'asset/img/default.png';
   static const authBg     = 'asset/img/auth_bg.png';
+  static const verifyBg   = 'asset/img/verify_bg.png';
 }

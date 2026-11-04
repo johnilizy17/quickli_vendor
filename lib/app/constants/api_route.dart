@@ -1,5 +1,6 @@
 class ApiRoute {
   // Auth
+  static const login       = '/vendors/auth/login';
   static const requestOtp  = '/vendors/auth/login/request-code';
   static const verifyOtp   = '/vendors/auth/login';
   static const signup      = '/vendors/auth/signup';
@@ -8,6 +9,10 @@ class ApiRoute {
   static const userProfile = '/vendors/my-profile';
   static const updateProfile = '/vendors/update';
   static const checkEmailAvailability = '/vendors/auth/check-email';
+  static const verifyPhone = '/vendors/auth/verify-phone';
+  static const resendPhoneOTP = '/vendors/auth/verify-phone/resend';
+  static const verifyEmail = '/vendors/auth/verify-email';
+  static const resendEmailOTP = '/vendors/auth/verify-email/resend';
 
   // Orders
   static const getOrders        = '/vendors/orders';
