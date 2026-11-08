@@ -5,6 +5,13 @@ allprojects {
     }
 }
 
+// Suppress Android Gradle Plugin warnings about compileSdk
+gradle.projectsEvaluated {
+    tasks.withType<JavaCompile> {
+        options.compilerArgs.add("-Xlint:deprecation")
+    }
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")

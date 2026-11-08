@@ -13,65 +13,93 @@ class BankAccountView extends GetView<BankAccountController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: ColorConstant.samantic),
-          onPressed: () => Get.back(),
-        ),
-        title: Text(
-          'Bank Account',
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: ColorConstant.samantic,
+      body: Column(
+        children: [
+          // Header with SafeArea
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(20.w),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Get.back(),
+                    child: Icon(
+                      Icons.arrow_back_ios,
+                      size: 20.sp,
+                      color: ColorConstant.samantic,
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Bank Account',
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w700,
+                            color: ColorConstant.samantic,
+                          ),
+                        ),
+                        SizedBox(height: 2.h),
+                        Text(
+                          'Where should we send your payouts?',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: ColorConstant.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
-      body: Form(
-        key: controller.formKey,
-        child: Column(
-          children: [
-            Expanded(
+          
+          Expanded(
+            child: Form(
+              key: controller.formKey,
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(20.w),
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    SizedBox(height: 8.h),
+                    
+                    // Section Title
+                    Text(
+                      'Payouts account details',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: ColorConstant.samantic,
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    
                     // Info banner
                     Container(
-                      padding: EdgeInsets.all(16.w),
+                      padding: EdgeInsets.all(12.w),
                       decoration: BoxDecoration(
                         color: ColorConstant.fadedPurpleAccent,
                         borderRadius: BorderRadius.circular(12.r),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: ColorConstant.brandColor,
-                            size: 20.sp,
-                          ),
-                          SizedBox(width: 12.w),
-                          Expanded(
-                            child: Text(
-                              'Add your bank account details to receive payments from Quickli. Ensure the account name matches your business registration.',
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: ColorConstant.samantic,
-                              ),
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Your bank details are encrypted and only used to process vendor payouts. Quickli uses bank-grade security.',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: ColorConstant.samantic,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                     SizedBox(height: 24.h),
 
                     // Bank Selection
                     Text(
-                      'Select Bank',
+                      'Bank name *',
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
@@ -80,36 +108,46 @@ class BankAccountView extends GetView<BankAccountController> {
                     ),
                     SizedBox(height: 8.h),
                     Obx(
-                      () => Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: ColorConstant.borderColor),
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: controller.selectedBank.value.isEmpty
-                                ? null
-                                : controller.selectedBank.value,
-                            hint: Text(
-                              'Select your bank',
-                              style: TextStyle(
-                                fontSize: 14.sp,
+                      () => GestureDetector(
+                        onTap: () => controller.showBankSelectionDialog(),
+                        child: Container(
+                          padding: EdgeInsets.all(16.w),
+                          decoration: BoxDecoration(
+                            color: ColorConstant.greyCard,
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.account_balance,
+                                size: 20.sp,
+                                color: controller.selectedBank.value.isEmpty
+                                    ? ColorConstant.lighengrey
+                                    : ColorConstant.brandColor,
+                              ),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: Text(
+                                  controller.selectedBank.value.isEmpty
+                                      ? 'Select your bank'
+                                      : controller.selectedBank.value,
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: controller.selectedBank.value.isEmpty
+                                        ? FontWeight.w400
+                                        : FontWeight.w600,
+                                    color: controller.selectedBank.value.isEmpty
+                                        ? ColorConstant.lighengrey
+                                        : ColorConstant.samantic,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16.sp,
                                 color: ColorConstant.darkGrey,
                               ),
-                            ),
-                            isExpanded: true,
-                            items: controller.banks.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                controller.selectedBank.value = value;
-                              }
-                            },
+                            ],
                           ),
                         ),
                       ),
@@ -117,22 +155,38 @@ class BankAccountView extends GetView<BankAccountController> {
                     SizedBox(height: 16.h),
 
                     // Account Number
-                    CustomTextField(
+                    Text(
+                      'Account number (10 digits) *',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: ColorConstant.samantic,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    TextField(
                       controller: controller.accountNumberController,
-                      label: 'Account Number',
-                      hint: 'Enter account number',
                       keyboardType: TextInputType.number,
                       maxLength: 10,
                       onChanged: controller.verifyAccountNumber,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter account number';
-                        }
-                        if (value.length != 10) {
-                          return 'Account number must be 10 digits';
-                        }
-                        return null;
-                      },
+                      decoration: InputDecoration(
+                        hintText: '0123456789',
+                        hintStyle: TextStyle(
+                          fontSize: 14.sp,
+                          color: ColorConstant.lighengrey,
+                        ),
+                        filled: true,
+                        fillColor: ColorConstant.greyCard,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
+                        counterText: '', // Hide character counter
+                      ),
                     ),
                     SizedBox(height: 16.h),
 
@@ -172,17 +226,14 @@ class BankAccountView extends GetView<BankAccountController> {
                               ? Container(
                                   padding: EdgeInsets.all(16.w),
                                   decoration: BoxDecoration(
-                                    color: ColorConstant.lightGreen,
+                                    color: Colors.green.shade50,
                                     borderRadius: BorderRadius.circular(12.r),
-                                    border: Border.all(
-                                      color: ColorConstant.green,
-                                    ),
                                   ),
                                   child: Row(
                                     children: [
                                       Icon(
                                         Icons.check_circle,
-                                        color: ColorConstant.green,
+                                        color: Colors.green,
                                         size: 20.sp,
                                       ),
                                       SizedBox(width: 12.w),
@@ -191,10 +242,10 @@ class BankAccountView extends GetView<BankAccountController> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Account Name',
+                                              'Account verified',
                                               style: TextStyle(
                                                 fontSize: 12.sp,
-                                                color: ColorConstant.green,
+                                                color: Colors.green.shade700,
                                               ),
                                             ),
                                             SizedBox(height: 2.h),
@@ -214,99 +265,35 @@ class BankAccountView extends GetView<BankAccountController> {
                                 )
                               : const SizedBox.shrink(),
                     ),
-                    SizedBox(height: 16.h),
-
-                    // BVN (Optional but recommended)
-                    CustomTextField(
-                      controller: controller.bvnController,
-                      label: 'BVN (Optional)',
-                      hint: 'Enter BVN for faster verification',
-                      keyboardType: TextInputType.number,
-                      maxLength: 11,
-                    ),
-                    SizedBox(height: 24.h),
-
-                    // Account Type
-                    Text(
-                      'Account Type',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                        color: ColorConstant.samantic,
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-                    Obx(
-                      () => Row(
-                        children: [
-                          Expanded(
-                            child: _AccountTypeCard(
-                              title: 'Savings',
-                              icon: Icons.savings_outlined,
-                              isSelected: controller.accountType.value == 'savings',
-                              onTap: () => controller.accountType.value = 'savings',
-                            ),
-                          ),
-                          SizedBox(width: 12.w),
-                          Expanded(
-                            child: _AccountTypeCard(
-                              title: 'Current',
-                              icon: Icons.account_balance_outlined,
-                              isSelected: controller.accountType.value == 'current',
-                              onTap: () => controller.accountType.value = 'current',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 24.h),
-
-                    // Important Notice
-                    Container(
-                      padding: EdgeInsets.all(16.w),
-                      decoration: BoxDecoration(
-                        color: ColorConstant.lightAmber.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(
-                          color: ColorConstant.amber.withOpacity(0.2),
+                    
+                    // Payout schedule info
+                    if (controller.accountName.value.isNotEmpty) ...[
+                      SizedBox(height: 24.h),
+                      Text(
+                        'Payout schedule:',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: ColorConstant.samantic,
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.warning_amber_outlined,
-                                color: ColorConstant.amber,
-                                size: 20.sp,
-                              ),
-                              SizedBox(width: 8.w),
-                              Text(
-                                'Important Notice',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: ColorConstant.amber,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 12.h),
-                          _NoticeItem('Account name must match business name'),
-                          _NoticeItem('Only Nigerian bank accounts are supported'),
-                          _NoticeItem('Payout settlements occur within 24-48 hours'),
-                          _NoticeItem('Ensure account is active and not restricted'),
-                        ],
-                      ),
-                    ),
+                      SizedBox(height: 8.h),
+                      _PayoutInfoItem('Weekly payouts every Thursday'),
+                      _PayoutInfoItem('Funds arrive in 1-2 business days'),
+                      _PayoutInfoItem('Minimum payout: ₦5,000'),
+                      _PayoutInfoItem('Instant payout available (fee applies)'),
+                    ],
+
+                    SizedBox(height: 80.h),
                   ],
                 ),
               ),
             ),
+          ),
 
-            // Save Button
-            Container(
+          // Save Button with SafeArea
+          SafeArea(
+            child: Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -318,13 +305,30 @@ class BankAccountView extends GetView<BankAccountController> {
                   ),
                 ],
               ),
-              child: CustomButton(
-                text: 'Save & Continue',
-                onPressed: controller.saveBankAccount,
-              ),
+              child: Obx(() => ElevatedButton(
+                onPressed: controller.accountName.value.isEmpty
+                    ? null
+                    : controller.saveBankAccount,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColorConstant.brandColor,
+                  minimumSize: Size(double.infinity, 56.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  disabledBackgroundColor: Colors.grey.shade300,
+                ),
+                child: Text(
+                  'Save Bank Account',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: ColorConstant.white,
+                  ),
+                ),
+              )),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -415,6 +419,41 @@ class _NoticeItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13.sp,
                 color: ColorConstant.amber,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+class _PayoutInfoItem extends StatelessWidget {
+  final String text;
+  const _PayoutInfoItem(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 4.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '• ',
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: ColorConstant.deepGrey,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: ColorConstant.deepGrey,
+                height: 1.4,
               ),
             ),
           ),

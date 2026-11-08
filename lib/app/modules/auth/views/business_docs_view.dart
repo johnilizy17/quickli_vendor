@@ -3,229 +3,71 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../constants/color_constant.dart';
 import '../controllers/business_docs_controller.dart';
-import '../../../widgets/custom_button.dart';
+import '../controllers/business_info_controller.dart';
+import '../../owner_verification/controllers/owner_verification_controller.dart';
+import '../../owner_verification/views/id_type_selection_view.dart';
+import '../../business_documents/controllers/business_documents_controller.dart';
+import '../../business_documents/views/business_documents_upload_view.dart';
+import '../controllers/bank_account_controller.dart';
+import 'business_type_selection_view.dart';
+import 'kyc_documents_view.dart';
+import 'bank_account_view.dart';
 
 class BusinessDocsView extends GetView<BusinessDocsController> {
   const BusinessDocsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: ColorConstant.samantic),
-          onPressed: () => Get.back(),
-        ),
-        title: Text(
-          'Business Documents',
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: ColorConstant.samantic,
-          ),
-        ),
-      ),
-      body: Column(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          // Go back to login when hardware/gesture back is triggered
+          Get.offAllNamed('/auth');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: ColorConstant.white,
+        body: Column(
         children: [
-          Expanded(
-            child: SingleChildScrollView(
+          // Header with SafeArea
+          SafeArea(
+            child: Padding(
               padding: EdgeInsets.all(20.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  // Info banner
-                  Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: ColorConstant.fadedPurpleAccent,
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: ColorConstant.brandColor,
-                          size: 20.sp,
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Text(
-                            'Upload required business documents to verify your business registration.',
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: ColorConstant.samantic,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
-
-                  Text(
-                    'Required Documents',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w700,
-                      color: ColorConstant.samantic,
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-
-                  // Business Registration Certificate
-                  _DocumentUploadCard(
-                    title: 'Business Registration Certificate',
-                    subtitle: 'CAC or business registration certificate',
-                    iconData: Icons.verified_outlined,
-                    imagePath: controller.businessRegPath,
-                    onTap: controller.uploadBusinessReg,
-                    isRequired: true,
-                  ),
-                  SizedBox(height: 12.h),
-
-                  // Tax Identification
-                  _DocumentUploadCard(
-                    title: 'Tax Identification Number (TIN)',
-                    subtitle: 'Federal Inland Revenue certificate',
-                    iconData: Icons.receipt_long_outlined,
-                    imagePath: controller.tinPath,
-                    onTap: controller.uploadTin,
-                    isRequired: true,
-                  ),
-                  SizedBox(height: 12.h),
-
-                  // Food Safety Certificate (Conditional)
-                  _DocumentUploadCard(
-                    title: 'Food Safety Certificate',
-                    subtitle: 'Required for restaurants and food businesses',
-                    iconData: Icons.food_bank_outlined,
-                    imagePath: controller.foodSafetyCertPath,
-                    onTap: controller.uploadFoodSafetyCert,
-                    isRequired: false,
-                  ),
-                  SizedBox(height: 12.h),
-
-                  // Business Permit
-                  _DocumentUploadCard(
-                    title: 'Business Permit/License',
-                    subtitle: 'Local government business permit',
-                    iconData: Icons.approval_outlined,
-                    imagePath: controller.businessPermitPath,
-                    onTap: controller.uploadBusinessPermit,
-                    isRequired: false,
-                  ),
-                  SizedBox(height: 24.h),
-
-                  // Additional documents section
-                  Text(
-                    'Additional Documents (Optional)',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w700,
-                      color: ColorConstant.samantic,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Upload any other relevant business documents',
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: ColorConstant.darkGrey,
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-
-                  // Additional documents list
-                  Obx(
-                    () => controller.additionalDocs.isEmpty
-                        ? const SizedBox.shrink()
-                        : Column(
-                            children: controller.additionalDocs
-                                .map((doc) => Padding(
-                                      padding: EdgeInsets.only(bottom: 12.h),
-                                      child: _AdditionalDocCard(
-                                        fileName: doc['name'] ?? '',
-                                        onRemove: () => controller.removeAdditionalDoc(doc),
-                                      ),
-                                    ))
-                                .toList(),
-                          ),
-                  ),
-
-                  // Add document button
                   GestureDetector(
-                    onTap: controller.addAdditionalDoc,
-                    child: Container(
-                      padding: EdgeInsets.all(16.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(
-                          color: ColorConstant.brandColor,
-                          width: 1.5,
-                          style: BorderStyle.solid,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_circle_outline,
-                            color: ColorConstant.brandColor,
-                            size: 20.sp,
-                          ),
-                          SizedBox(width: 8.w),
-                          Text(
-                            'Add Another Document',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w600,
-                              color: ColorConstant.brandColor,
-                            ),
-                          ),
-                        ],
-                      ),
+                    onTap: () {
+                      // Go back to login instead of previous screen
+                      Get.offAllNamed('/auth');
+                    },
+                    child: Icon(
+                      Icons.arrow_back_ios,
+                      size: 20.sp,
+                      color: ColorConstant.samantic,
                     ),
                   ),
-                  SizedBox(height: 24.h),
-
-                  // Tips
-                  Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: ColorConstant.lightGreen,
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
+                  SizedBox(width: 16.w),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.tips_and_updates_outlined,
-                              color: ColorConstant.green,
-                              size: 20.sp,
-                            ),
-                            SizedBox(width: 8.w),
-                            Text(
-                              'Document Guidelines',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                                color: ColorConstant.green,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          'Register your business',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                            color: ColorConstant.samantic,
+                          ),
                         ),
-                        SizedBox(height: 12.h),
-                        _TipItem('Upload clear, readable copies'),
-                        _TipItem('Documents should be valid and not expired'),
-                        _TipItem('PDF or image formats accepted'),
-                        _TipItem('File size should not exceed 10MB'),
+                        SizedBox(height: 2.h),
+                        Text(
+                          'Get started with Quickli in under 5 -15 minutes',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: ColorConstant.black,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -234,220 +76,395 @@ class BusinessDocsView extends GetView<BusinessDocsController> {
             ),
           ),
 
-          // Save Button
-          Container(
-            padding: EdgeInsets.all(20.w),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                print('[BusinessDocs] 🔄 Pull-to-refresh triggered');
+                await controller.loadSavedData();
+              },
+              color: ColorConstant.brandColor,
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(), // Enable refresh even when content fits
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Description
+                    Text(
+                      'Submit the required information so our team can verify your account.',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: ColorConstant.deepGrey,
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+
+                    // Progress section
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Obx(() => Text(
+                          '${controller.completedSections.value} of 4 completed',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: ColorConstant.samantic,
+                          ),
+                        )),
+                        Obx(() => Text(
+                          '${controller.progressPercentage.value}%',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: ColorConstant.gradientStart,
+                          ),
+                        )),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    // Progress bar
+                    Obx(() => ClipRRect(
+                      borderRadius: BorderRadius.circular(4.r),
+                      child: LinearProgressIndicator(
+                        value: controller.progressPercentage.value / 100,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          ColorConstant.brandColor,
+                        ),
+                        minHeight: 8.h,
+                      ),
+                    )),
+                    SizedBox(height: 20.h),
+
+                    // Warning banner
+                    Container(
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: ColorConstant.yellowCard,
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Text(
+                        'You cannot go online until all required items are approved or conditionally accepted.',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: ColorConstant.amber,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 24.h),
+
+                    // Business information section
+                    Obx(() => _RegistrationSection(
+                      icon: Icons.person_2_outlined,
+                      iconColor: ColorConstant.gradientStart,
+                      iconBgColor: ColorConstant.fadedPurpleAccent,
+                      title: 'Business information',
+                      subtitle: 'Type, name, logo, and address',
+                      status: controller.businessInfoStatus.value,
+                      onTap: () async {
+                        // Initialize BusinessInfoController before navigation
+                        Get.put(BusinessInfoController());
+                        await Get.to(() => const BusinessTypeSelectionView());
+                        
+                        // Refresh verification status when returning
+                        controller.loadSavedData();
+                      },
+                    )),
+                    SizedBox(height: 12.h),
+
+                    // Owner verification section
+                    Obx(() => _RegistrationSection(
+                      icon: Icons.badge_outlined,
+                      iconColor: Colors.blue,
+                      iconBgColor: Colors.blue.shade50,
+                      title: 'Owner verification',
+                      subtitle: 'Identity documents and selfie',
+                      status: controller.ownerVerificationStatus.value,
+                      onTap: () async {
+                        print('[BusinessDocs] Owner verification tapped');
+                        try {
+                          // Clean up any existing controller
+                          if (Get.isRegistered<OwnerVerificationController>()) {
+                            print('[BusinessDocs] Removing existing controller...');
+                            Get.delete<OwnerVerificationController>();
+                          }
+                          
+                          print('[BusinessDocs] Creating OwnerVerificationController...');
+                          final ownerController = Get.put(OwnerVerificationController());
+                          print('[BusinessDocs] Controller created: ${ownerController.runtimeType}');
+                          
+                          print('[BusinessDocs] Navigating to IdTypeSelectionView...');
+                          await Get.to(() => const IdTypeSelectionView());
+                          
+                          print('[BusinessDocs] Returned from owner verification, refreshing data...');
+                          // Refresh verification status when returning
+                          await controller.loadSavedData();
+                        } catch (e, stackTrace) {
+                          print('[BusinessDocs] ❌ Error navigating to owner verification: $e');
+                          print('[BusinessDocs] Stack trace: $stackTrace');
+                          Get.snackbar(
+                            'Navigation Error',
+                            'Failed to open owner verification: ${e.toString()}',
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
+                      },
+                    )),
+                    SizedBox(height: 12.h),
+
+                    // Business documents section
+                    Obx(() => _RegistrationSection(
+                      icon: Icons.description_outlined,
+                      iconColor: Colors.blue,
+                      iconBgColor: Colors.blue.shade50,
+                      title: 'Business documents',
+                      subtitle: 'Upload required documents',
+                      status: controller.businessDocsStatus.value,
+                      onTap: () async {
+                        print('[BusinessDocs] Business documents tapped');
+                        
+                        try {
+                          // Clean up any existing controller
+                          if (Get.isRegistered<BusinessDocumentsController>()) {
+                            print('[BusinessDocs] Removing existing business documents controller...');
+                            Get.delete<BusinessDocumentsController>();
+                          }
+                          
+                          print('[BusinessDocs] Creating BusinessDocumentsController...');
+                          Get.put(BusinessDocumentsController());
+                          
+                          await Get.to(() => const BusinessDocumentsUploadView());
+                          
+                          print('[BusinessDocs] Returned from business documents, refreshing data...');
+                          // Refresh verification status when returning
+                          await controller.loadSavedData();
+                        } catch (e, stackTrace) {
+                          print('[BusinessDocs] ❌ Error navigating to business documents: $e');
+                          print('[BusinessDocs] Stack trace: $stackTrace');
+                          Get.snackbar(
+                            'Navigation Error',
+                            'Failed to open business documents: ${e.toString()}',
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
+                      },
+                    )),
+                    SizedBox(height: 12.h),
+
+                    // Bank account section
+                    Obx(() => _RegistrationSection(
+                      icon: Icons.account_balance_outlined,
+                      iconColor: Colors.blue,
+                      iconBgColor: Colors.blue.shade50,
+                      title: 'Bank account',
+                      subtitle: 'Payout bank account submission',
+                      status: controller.bankAccountStatus.value,
+                      onTap: () async {
+                        Get.put(BankAccountController());
+                        await Get.to(() => const BankAccountView());
+                        
+                        // Refresh verification status when returning
+                        controller.loadSavedData();
+                      },
+                    )),
+
+                    SizedBox(height: 80.h), // Space for button
+                  ],
                 ),
-              ],
-            ),
-            child: CustomButton(
-              text: 'Save & Continue',
-              onPressed: controller.saveDocuments,
+              ),
             ),
           ),
         ],
       ),
-    );
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.all(20.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: GestureDetector(
+            onTap: () async {
+              print('[BusinessDocsView] ========== BUTTON TAPPED ==========');
+              print('[BusinessDocsView] Controller instance: ${controller.runtimeType}');
+              print('[BusinessDocsView] About to call controller.submitApplication()');
+              try {
+                await controller.submitApplication();
+                print('[BusinessDocsView] ✅ Controller method completed');
+              } catch (e, stackTrace) {
+                print('[BusinessDocsView] ❌ Error calling controller: $e');
+                print('[BusinessDocsView] ❌ Stack: $stackTrace');
+              }
+              print('[BusinessDocsView] ========== BUTTON TAP COMPLETE ==========');
+            },
+            child: Container(
+              width: double.infinity,
+              height: 56.h,
+              decoration: BoxDecoration(
+                color: ColorConstant.brandColor,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                'Continue',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      ), // Close Scaffold
+    ); // Close PopScope
   }
 }
 
-class _DocumentUploadCard extends StatelessWidget {
+class _RegistrationSection extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBgColor;
   final String title;
   final String subtitle;
-  final IconData iconData;
-  final RxString imagePath;
+  final String status; // 'not_started', 'in_progress', 'completed'
   final VoidCallback onTap;
-  final bool isRequired;
 
-  const _DocumentUploadCard({
+  const _RegistrationSection({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBgColor,
     required this.title,
     required this.subtitle,
-    required this.iconData,
-    required this.imagePath,
+    required this.status,
     required this.onTap,
-    this.isRequired = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color: imagePath.value.isEmpty
-                  ? ColorConstant.borderColor
-                  : ColorConstant.green,
-              width: imagePath.value.isEmpty ? 1 : 2,
-            ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: ColorConstant.whiteCard,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: ColorConstant.whiteCard,
+            width: 1,
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 48.w,
-                height: 48.w,
-                decoration: BoxDecoration(
-                  color: imagePath.value.isEmpty
-                      ? ColorConstant.lightestGrey
-                      : ColorConstant.lightGreen,
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                child: Icon(
-                  imagePath.value.isEmpty ? iconData : Icons.check_circle,
-                  color: imagePath.value.isEmpty
-                      ? ColorConstant.darkGrey
-                      : ColorConstant.green,
-                  size: 24.sp,
-                ),
+        ),
+        child: Row(
+          children: [
+            // Icon
+            Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                borderRadius: BorderRadius.circular(10.r),
               ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: TextStyle(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w600,
-                              color: ColorConstant.samantic,
-                            ),
-                          ),
-                        ),
-                        if (isRequired)
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                            decoration: BoxDecoration(
-                              color: ColorConstant.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                            child: Text(
-                              'Required',
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w600,
-                                color: ColorConstant.red,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      imagePath.value.isEmpty ? subtitle : 'Uploaded',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: imagePath.value.isEmpty
-                            ? ColorConstant.darkGrey
-                            : ColorConstant.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 8.w),
-              Icon(
-                imagePath.value.isEmpty ? Icons.upload_outlined : Icons.edit,
-                color: ColorConstant.brandColor,
+              child: Icon(
+                icon,
+                color: iconColor,
                 size: 20.sp,
               ),
-            ],
-          ),
+            ),
+            SizedBox(width: 12.w),
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w600,
+                      color: ColorConstant.samantic,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: ColorConstant.darkGrey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 12.w),
+            // Status badge and arrow stacked vertically
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Status badge
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor().withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6.r),
+                  ),
+                  child: Text(
+                    _getStatusText(),
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: _getStatusColor(),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                // Arrow icon
+                Icon(
+                  Icons.chevron_right,
+                  color: ColorConstant.darkGrey,
+                  size: 20.sp,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-class _AdditionalDocCard extends StatelessWidget {
-  final String fileName;
-  final VoidCallback onRemove;
-
-  const _AdditionalDocCard({
-    required this.fileName,
-    required this.onRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: ColorConstant.lightGreen,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: ColorConstant.green),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.insert_drive_file, color: ColorConstant.green, size: 20.sp),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Text(
-              fileName,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: ColorConstant.samantic,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: Icon(Icons.close, color: ColorConstant.red, size: 20.sp),
-            onPressed: onRemove,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
-      ),
-    );
+  String _getStatusText() {
+    switch (status) {
+      case 'completed':
+        return 'Completed';
+      case 'in_progress':
+        return 'In progress';
+      case 'not_started':
+      default:
+        return 'Not started';
+    }
   }
-}
 
-class _TipItem extends StatelessWidget {
-  final String text;
-  const _TipItem(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 6.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            margin: EdgeInsets.only(top: 6.h),
-            width: 4.w,
-            height: 4.w,
-            decoration: BoxDecoration(
-              color: ColorConstant.green,
-              shape: BoxShape.circle,
-            ),
-          ),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: ColorConstant.green,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  Color _getStatusColor() {
+    switch (status) {
+      case 'completed':
+        return Colors.green;
+      case 'in_progress':
+        return Colors.orange;
+      case 'not_started':
+      default:
+        return Colors.orange;
+    }
   }
 }

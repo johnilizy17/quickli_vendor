@@ -1,41 +1,45 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide FormData, MultipartFile;
+import '../constants/api_route.dart';
+import 'api_service.dart';
 
 class RegistrationApiService {
-  final Dio _dio;
+  final ApiService _apiService = ApiService.to;
 
-  RegistrationApiService({Dio? dio})
-      : _dio = dio ??
-            Dio(BaseOptions(
-              baseUrl: 'https://api.quickli.com', // TODO: Replace with actual API URL
-              connectTimeout: const Duration(seconds: 30),
-              receiveTimeout: const Duration(seconds: 30),
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-              },
-            ));
+  RegistrationApiService();
 
   /// Upload a file to server
   Future<String?> uploadFile(File file, {String? folder}) async {
     try {
+      print('[API] Uploading file: ${file.path.split('/').last} to folder: ${folder ?? 'default'}');
+      
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
+        'files': await MultipartFile.fromFile(
           file.path,
           filename: file.path.split('/').last,
         ),
         if (folder != null) 'folder': folder,
       });
 
-      final response = await _dio.post('/api/upload', data: formData);
+      final response = await _apiService.post(ApiRoute.uploadImage, data: formData);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data['url'] as String?;
+        // The API returns { status, message, data: { urls: [...] } }
+        final urls = response.data['data']?['urls'] as List?;
+        if (urls != null && urls.isNotEmpty) {
+          final url = urls[0] as String;
+          print('[API] ✅ File uploaded successfully: $url');
+          return url;
+        }
+        print('[API] ❌ No URLs in response: ${response.data}');
+        return null;
       }
 
+      print('[API] ❌ Upload failed with status: ${response.statusCode}');
       return null;
     } catch (e) {
+      print('[API] ❌ Upload error: $e');
       _handleError(e);
       return null;
     }
@@ -45,20 +49,53 @@ class RegistrationApiService {
   Future<List<String>?> uploadMultipleFiles(List<File> files,
       {String? folder}) async {
     try {
-      final uploadTasks = files.map((file) => uploadFile(file, folder: folder));
-      final results = await Future.wait(uploadTasks);
-      return results.where((url) => url != null).cast<String>().toList();
+      print('[API] Uploading ${files.length} files to folder: ${folder ?? 'default'}');
+      
+      // Create form data with multiple files
+      final formData = FormData();
+      
+      for (var file in files) {
+        formData.files.add(MapEntry(
+          'files',
+          await MultipartFile.fromFile(
+            file.path,
+            filename: file.path.split('/').last,
+          ),
+        ));
+      }
+      
+      if (folder != null) {
+        formData.fields.add(MapEntry('folder', folder));
+      }
+
+      final response = await _apiService.post(ApiRoute.uploadImage, data: formData);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // The API returns { status, message, data: { urls: [...] } }
+        final urls = response.data['data']?['urls'] as List?;
+        if (urls != null && urls.isNotEmpty) {
+          final urlStrings = urls.cast<String>();
+          print('[API] ✅ Successfully uploaded ${urlStrings.length}/${files.length} files');
+          return urlStrings;
+        }
+        print('[API] ❌ No URLs in response: ${response.data}');
+        return [];
+      }
+
+      print('[API] ❌ Upload failed with status: ${response.statusCode}');
+      return [];
     } catch (e) {
+      print('[API] ❌ Multiple upload error: $e');
       _handleError(e);
       return null;
     }
   }
 
-  /// Save business information
-  Future<Map<String, dynamic>?> saveBusinessInfo(
+  /// Setup business information (onboarding step 1)
+  Future<Map<String, dynamic>?> setupBusinessInfo(
       Map<String, dynamic> data) async {
     try {
-      final response = await _dio.post('/api/vendor/business-info', data: data);
+      final response = await _apiService.post(ApiRoute.setupBusinessInfo, data: data);
       return response.data;
     } catch (e) {
       _handleError(e);
@@ -66,12 +103,11 @@ class RegistrationApiService {
     }
   }
 
-  /// Save owner verification
-  Future<Map<String, dynamic>?> saveOwnerVerification(
+  /// Setup KYC details (onboarding step 2)
+  Future<Map<String, dynamic>?> setupKycDetails(
       Map<String, dynamic> data) async {
     try {
-      final response =
-          await _dio.post('/api/vendor/owner-verification', data: data);
+      final response = await _apiService.post(ApiRoute.setupKycDetails, data: data);
       return response.data;
     } catch (e) {
       _handleError(e);
@@ -79,35 +115,72 @@ class RegistrationApiService {
     }
   }
 
-  /// Save business documents
+  /// Save business documents (alternative endpoint)
   Future<Map<String, dynamic>?> saveBusinessDocuments(
       Map<String, dynamic> data) async {
     try {
-      final response =
-          await _dio.post('/api/vendor/business-documents', data: data);
+      print('[API] Saving business documents to /vendors/business-documents');
+      print('[API] Data: $data');
+      
+      final response = await _apiService.post(ApiRoute.businessDocuments, data: data);
+      
+      print('[API] ✅ Business documents saved [${response.statusCode}]: ${response.data}');
+      
       return response.data;
     } catch (e) {
+      print('[API] ❌ Business documents save error: $e');
       _handleError(e);
       return null;
     }
   }
 
-  /// Save bank account
-  Future<Map<String, dynamic>?> saveBankAccount(
+  /// Update business with documents field directly
+  Future<Map<String, dynamic>?> updateBusinessDocuments(
+      String businessId, Map<String, dynamic> documentsData) async {
+    try {
+      print('[API] Updating business $businessId with documents via PATCH');
+      print('[API] Documents data: $documentsData');
+      
+      final payload = {
+        'businessId': businessId,
+        'documents': documentsData,
+      };
+      
+      final response = await _apiService.patch('/business/$businessId', data: payload);
+      
+      print('[API] ✅ Business documents updated [${response.statusCode}]: ${response.data}');
+      
+      return response.data;
+    } catch (e) {
+      print('[API] ❌ Business update error: $e');
+      _handleError(e);
+      return null;
+    }
+  }
+
+  /// Update verification step progress
+  Future<Map<String, dynamic>?> updateVerificationStep(
       Map<String, dynamic> data) async {
     try {
-      final response = await _dio.post('/api/vendor/bank-account', data: data);
+      print('[API] Updating verification step with data: $data');
+      
+      final response = await _apiService.patch(ApiRoute.updateVerificationStep, data: data);
+      
+      print('[API] ✅ Verification step updated [${response.statusCode}]: ${response.data}');
+      
       return response.data;
     } catch (e) {
+      print('[API] ❌ Verification step update error: $e');
       _handleError(e);
       return null;
     }
   }
 
-  /// Save tax information
-  Future<Map<String, dynamic>?> saveTaxInfo(Map<String, dynamic> data) async {
+  /// Setup bank details (onboarding step 3)
+  Future<Map<String, dynamic>?> setupBankDetails(
+      Map<String, dynamic> data) async {
     try {
-      final response = await _dio.post('/api/vendor/tax-info', data: data);
+      final response = await _apiService.post(ApiRoute.setupBankDetails, data: data);
       return response.data;
     } catch (e) {
       _handleError(e);
@@ -115,21 +188,27 @@ class RegistrationApiService {
     }
   }
 
-  /// Submit complete registration
-  Future<Map<String, dynamic>?> submitRegistration() async {
+  /// Get vendor business profile with comprehensive review data
+  Future<Map<String, dynamic>?> getVendorBusinessForReview() async {
     try {
-      final response = await _dio.post('/api/vendor/submit-registration');
+      print('[API] Fetching vendor business with review=true...');
+      final response = await _apiService.get(
+        ApiRoute.getVendorBusiness,
+        queryParameters: {'review': 'true'},
+      );
+      print('[API] ✅ Review data received');
       return response.data;
     } catch (e) {
-      _handleError(e);
-      return null;
+      print('[API] ⚠️ Review endpoint failed, falling back to standard endpoint: $e');
+      // Fallback to standard endpoint if review parameter not supported
+      return getVendorBusiness();
     }
   }
 
-  /// Get registration status
-  Future<Map<String, dynamic>?> getRegistrationStatus() async {
+  /// Get vendor business profile
+  Future<Map<String, dynamic>?> getVendorBusiness() async {
     try {
-      final response = await _dio.get('/api/vendor/registration-status');
+      final response = await _apiService.get(ApiRoute.getVendorBusiness);
       return response.data;
     } catch (e) {
       _handleError(e);
@@ -137,35 +216,55 @@ class RegistrationApiService {
     }
   }
 
-  /// Verify bank account (using Paystack)
-  Future<Map<String, dynamic>?> verifyBankAccount({
-    required String accountNumber,
-    required String bankCode,
+  /// Get address by latitude and longitude
+  Future<Map<String, dynamic>?> getAddressByLatLng({
+    required double lat,
+    required double lng,
   }) async {
     try {
-      final response = await _dio.post(
-        '/api/vendor/verify-bank-account',
-        data: {
-          'accountNumber': accountNumber,
-          'bankCode': bankCode,
+      print('[API] Getting address for coordinates: $lat, $lng');
+      
+      final response = await _apiService.get(
+        ApiRoute.getAddressByLatLng,
+        queryParameters: {
+          'lat': lat,
+          'lng': lng,
         },
       );
-      return response.data;
+
+      if (response.statusCode == 200) {
+        print('[API] ✅ Address retrieved successfully');
+        return response.data;
+      }
+
+      print('[API] ❌ Address retrieval failed with status: ${response.statusCode}');
+      return null;
     } catch (e) {
-      _handleError(e);
+      print('[API] ❌ Address retrieval error: $e');
+      // Don't show error snackbar for address lookup failures - fail silently
       return null;
     }
   }
 
-  /// Get list of supported banks
-  Future<List<Map<String, dynamic>>?> getBanks() async {
+  /// Update business details
+  Future<Map<String, dynamic>?> updateBusinessDetails(
+      String businessId, Map<String, dynamic> data) async {
     try {
-      final response = await _dio.get('/api/vendor/banks');
-      if (response.data is List) {
-        return List<Map<String, dynamic>>.from(response.data);
-      }
-      return null;
+      // Add businessId to the payload
+      final payload = {
+        'businessId': businessId,
+        ...data,
+      };
+      
+      print('[API] Updating business $businessId with data: $payload');
+      
+      final response = await _apiService.post('/business/update', data: payload);
+      
+      print('[API] ✅ Business update response [${response.statusCode}]: ${response.data}');
+      
+      return response.data;
     } catch (e) {
+      print('[API] ❌ Business update error: $e');
       _handleError(e);
       return null;
     }

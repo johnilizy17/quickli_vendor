@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:get/get.dart';
@@ -60,9 +60,7 @@ class FileUploadService {
 
   /// Show bottom sheet to choose between camera and gallery
   Future<File?> pickImageWithOptions({bool crop = false}) async {
-    File? file;
-
-    await Get.bottomSheet(
+    final result = await Get.bottomSheet<String>(
       Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -93,17 +91,15 @@ class FileUploadService {
             ListTile(
               leading: Icon(Icons.camera_alt, color: ColorConstant.brandColor),
               title: const Text('Camera'),
-              onTap: () async {
-                Get.back();
-                file = await takePhoto(crop: crop);
+              onTap: () {
+                Get.back(result: 'camera');
               },
             ),
             ListTile(
               leading: Icon(Icons.photo_library, color: ColorConstant.brandColor),
               title: const Text('Gallery'),
-              onTap: () async {
-                Get.back();
-                file = await pickImageFromGallery(crop: crop);
+              onTap: () {
+                Get.back(result: 'gallery');
               },
             ),
             const SizedBox(height: 10),
@@ -114,6 +110,15 @@ class FileUploadService {
       enableDrag: true,
     );
 
+    if (result == null) return null;
+
+    File? file;
+    if (result == 'camera') {
+      file = await takePhoto(crop: crop);
+    } else if (result == 'gallery') {
+      file = await pickImageFromGallery(crop: crop);
+    }
+
     return file;
   }
 
@@ -122,6 +127,7 @@ class FileUploadService {
     try {
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: imageFile.path,
+        compressQuality: 85,
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: 'Crop Image',
@@ -129,9 +135,11 @@ class FileUploadService {
             toolbarWidgetColor: ColorConstant.white,
             initAspectRatio: CropAspectRatioPreset.original,
             lockAspectRatio: false,
+            hideBottomControls: false,
           ),
           IOSUiSettings(
             title: 'Crop Image',
+            minimumAspectRatio: 1.0,
           ),
         ],
       );
@@ -139,27 +147,31 @@ class FileUploadService {
       if (croppedFile != null) {
         return File(croppedFile.path);
       }
-      return null;
+      // If user cancels cropping, return original image
+      return imageFile;
     } catch (e) {
+      print('Crop error: ${e.toString()}');
       Get.snackbar(
-        'Error',
-        'Failed to crop image: ${e.toString()}',
+        'Crop Skipped',
+        'Using original image',
         snackPosition: SnackPosition.BOTTOM,
       );
-      return null;
+      // Return original image if cropping fails
+      return imageFile;
     }
   }
 
-  /// Pick a document file (PDF, DOC, etc.)
+  /// Pick a document file (image only - PDF support requires native file picker)
   Future<File?> pickDocument() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+      // Using image picker for images (jpg, jpeg, png)
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 100,
       );
 
-      if (result != null && result.files.single.path != null) {
-        return File(result.files.single.path!);
+      if (image != null) {
+        return File(image.path);
       }
 
       return null;
@@ -173,20 +185,16 @@ class FileUploadService {
     }
   }
 
-  /// Pick multiple documents
+  /// Pick multiple documents (images only)
   Future<List<File>?> pickMultipleDocuments() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
-        allowMultiple: true,
+      // Using image picker for multiple images
+      final List<XFile> images = await _imagePicker.pickMultiImage(
+        imageQuality: 100,
       );
 
-      if (result != null) {
-        return result.paths
-            .where((path) => path != null)
-            .map((path) => File(path!))
-            .toList();
+      if (images.isNotEmpty) {
+        return images.map((image) => File(image.path)).toList();
       }
 
       return null;

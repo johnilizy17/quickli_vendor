@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../services/registration_api_service.dart';
 
 class TaxInfoController extends GetxController {
   final formKey = GlobalKey<FormState>();
+  final _apiService = RegistrationApiService();
+
+  // Store businessId
+  final businessId = ''.obs;
 
   // Controllers
   final tinController = TextEditingController();
@@ -30,7 +35,21 @@ class TaxInfoController extends GetxController {
   }
 
   Future<void> loadSavedData() async {
-    // TODO: Load from API or local storage
+    // Get vendor business
+    try {
+      final business = await _apiService.getVendorBusiness();
+      if (business != null && business['_id'] != null) {
+        businessId.value = business['_id'];
+        
+        // Pre-fill if documents exist
+        final documents = business['documents'];
+        if (documents != null) {
+          tinController.text = documents['tin'] ?? '';
+        }
+      }
+    } catch (e) {
+      print('Error loading business: $e');
+    }
   }
 
   Future<void> uploadTaxCertificate() async {
@@ -54,32 +73,51 @@ class TaxInfoController extends GetxController {
         barrierDismissible: false,
       );
 
-      // TODO: Save to API
+      // Update business with tax info using setupKycDetails
       final data = {
-        'tin': tinController.text,
-        'vatNumber': vatNumberController.text,
-        'businessRegNumber': businessRegNumberController.text,
-        'taxOffice': taxOfficeController.text,
-        'isVatRegistered': isVatRegistered.value,
-        'taxCertificate': taxCertificatePath.value,
+        'businessId': businessId.value,
+        'documents': {
+          'tin': tinController.text,
+        },
       };
 
-      await Future.delayed(const Duration(seconds: 2));
+      final response = await _apiService.setupKycDetails(data);
 
       Get.back(); // Close loading dialog
-      Get.back(); // Go back to registration screen
 
-      Get.snackbar(
-        'Success',
-        'Tax information saved successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      if (response != null) {
+        // Mark step as complete
+        await _apiService.updateVerificationStep({
+          'businessId': businessId.value,
+          'step': 'tax-info',
+        });
+
+        Get.back(); // Go back to registration screen
+
+        Get.snackbar(
+          'Success',
+          'Tax information saved successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to save tax information',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
     } catch (e) {
       Get.back(); // Close loading dialog
       Get.snackbar(
         'Error',
-        'Failed to save tax information',
+        'Failed to save tax information: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     }
   }

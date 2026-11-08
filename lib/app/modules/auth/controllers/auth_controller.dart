@@ -325,13 +325,52 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       appLog('Login error: $e');
+      appLog('Login error type: ${e.runtimeType}');
       
       // Parse error message
       String errorMessage = 'An error occurred. Please try again.';
       
-      if (e.toString().contains('Invalid') || e.toString().contains('credentials')) {
-        errorMessage = 'Invalid email/phone or password';
-      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
+      // Check if it's a DioException with response
+      if (e.toString().contains('DioException')) {
+        final errorStr = e.toString();
+        appLog('DioException details: $errorStr');
+        
+        // Try to extract status code
+        if (errorStr.contains('statusCode:')) {
+          final statusMatch = RegExp(r'statusCode:\s*(\d+)').firstMatch(errorStr);
+          if (statusMatch != null) {
+            final statusCode = int.tryParse(statusMatch.group(1) ?? '');
+            appLog('Status code: $statusCode');
+            
+            if (statusCode == 401 || statusCode == 403) {
+              errorMessage = 'Invalid email/phone or password';
+            } else if (statusCode == 404) {
+              errorMessage = 'Account not found';
+            } else if (statusCode == 429) {
+              errorMessage = 'Too many attempts. Please try again later.';
+            } else if (statusCode != null && statusCode >= 500) {
+              errorMessage = 'Server error. Please try again later.';
+            }
+          }
+        }
+        
+        // Try to extract message from response data
+        if (errorStr.contains('message:')) {
+          try {
+            final msgMatch = RegExp(r'message:\s*([^,}]+)').firstMatch(errorStr);
+            if (msgMatch != null) {
+              final msg = msgMatch.group(1)?.trim().replaceAll('"', '');
+              if (msg != null && msg.isNotEmpty) {
+                errorMessage = msg;
+              }
+            }
+          } catch (parseError) {
+            appLog('Error parsing message: $parseError');
+          }
+        }
+      } else if (e.toString().contains('SocketException') || 
+                 e.toString().contains('connection') ||
+                 e.toString().contains('network')) {
         errorMessage = 'Network error. Please check your connection.';
       }
       
@@ -342,6 +381,7 @@ class AuthController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        duration: const Duration(seconds: 5),
       );
     } finally {
       isLoading.value = false;

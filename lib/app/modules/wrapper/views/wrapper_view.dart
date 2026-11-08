@@ -4,9 +4,9 @@ import 'package:get/get.dart';
 import '../../../constants/color_constant.dart';
 import '../../home/views/home_view.dart';
 import '../../orders/views/orders_view.dart';
-import '../../menu/views/menu_view.dart';
+import '../../products/views/products_view.dart';
 import '../../earnings/views/earnings_view.dart';
-import '../../profile/views/profile_view.dart';
+import '../../menu/views/menu_view.dart';
 import '../controllers/wrapper_controller.dart';
 
 class WrapperView extends GetView<WrapperController> {
@@ -15,9 +15,9 @@ class WrapperView extends GetView<WrapperController> {
   static final _pages = [
     const HomeView(),
     const OrdersView(),
-    const MenuView(),
+    const ProductsView(),
     const EarningsView(),
-    const ProfileView(),
+    const MenuView(),
   ];
 
   @override
@@ -29,15 +29,37 @@ class WrapperView extends GetView<WrapperController> {
             onTap: controller.changeTab,
             type: BottomNavigationBarType.fixed,
             selectedItemColor: ColorConstant.brandColor,
-            unselectedItemColor: ColorConstant.darkGrey,
+            unselectedItemColor: Colors.grey.shade400,
             selectedLabelStyle: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w600),
             unselectedLabelStyle: TextStyle(fontSize: 11.sp),
+            backgroundColor: Colors.white,
+            elevation: 8,
             items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home_outlined),       activeIcon: Icon(Icons.home_rounded),         label: 'Home'),
-              BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined),activeIcon: Icon(Icons.receipt_long_rounded), label: 'Orders'),
-              BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined),   activeIcon: Icon(Icons.menu_book_rounded),    label: 'Menu'),
-              BottomNavigationBarItem(icon: Icon(Icons.bar_chart_outlined),   activeIcon: Icon(Icons.bar_chart_rounded),    label: 'Earnings'),
-              BottomNavigationBarItem(icon: Icon(Icons.person_outline),       activeIcon: Icon(Icons.person_rounded),       label: 'Profile'),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.receipt_long_outlined),
+                activeIcon: Icon(Icons.receipt_long),
+                label: 'Orders',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.shopping_bag_outlined),
+                activeIcon: Icon(Icons.shopping_bag),
+                label: 'Products',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.account_balance_wallet_outlined),
+                activeIcon: Icon(Icons.account_balance_wallet),
+                label: 'Earnings',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.more_horiz),
+                activeIcon: Icon(Icons.more_horiz),
+                label: 'More',
+              ),
             ],
           ),
         ));

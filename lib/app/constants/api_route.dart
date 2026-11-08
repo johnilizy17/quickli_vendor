@@ -13,6 +13,8 @@ class ApiRoute {
   static const resendPhoneOTP = '/vendors/auth/verify-phone/resend';
   static const verifyEmail = '/vendors/auth/verify-email';
   static const resendEmailOTP = '/vendors/auth/verify-email/resend';
+  static const requestPasswordReset = '/vendors/auth/request-password-reset';
+  static const resetPassword = '/vendors/auth/reset-password';
 
   // Orders
   static const getOrders        = '/vendors/orders';
@@ -39,6 +41,10 @@ class ApiRoute {
   static const updateOutlet      = '/vendors/outlet';
   static const toggleOutletOnline= '/vendors/outlet/toggle';
   static const updateOpeningHours= '/vendors/outlet/opening-hours';
+  
+  // Dashboard / Metrics
+  static String businessOutletsMetrics(String businessId) => '/business/$businessId/outlets/all/metrics';
+  static String outletMetrics(String businessId, String outletId) => '/business/$businessId/outlets/$outletId/metrics';
 
   // Earnings / Wallet
   static const getEarnings       = '/vendors/earnings';
@@ -46,9 +52,25 @@ class ApiRoute {
   static const requestWithdrawal = '/vendors/wallet/withdraw';
 
   // Notifications
-  static const getNotifications  = '/vendors/notifications';
-  static const markAllRead       = '/vendors/notifications/read-all';
+  static String getNotifications(String businessId, String outletId) => 
+    '/business/$businessId/outlets/$outletId/notifications';
+  static String markNotificationsRead(String businessId, String outletId) => 
+    '/business/$businessId/outlets/$outletId/notifications/mark-read';
 
   // Uploads
   static const uploadImage       = '/uploads';
+
+  // Location / Address
+  static const getAddressByLatLng = '/address/get-address-by-latlng';
+
+  // Business Information / Registration
+  static const setupBusinessInfo  = '/business/onboarding/setup-business-info';
+  static const setupKycDetails    = '/business/onboarding/setup-kyc-details';
+  static const updateVerificationStep = '/business/onboarding/update-verification-step';
+  static const setupBankDetails   = '/business/onboarding/setup-bank-details';
+  static const ownerVerification  = '/vendors/owner-verification';
+  static const businessDocuments  = '/vendors/business-documents';
+  static const submitRegistration = '/vendors/submit-registration';
+  static const registrationStatus = '/vendors/registration-status';
+  static const getVendorBusiness  = '/business';
 }

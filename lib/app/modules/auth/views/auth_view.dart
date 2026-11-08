@@ -3,9 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../constants/color_constant.dart';
 import '../../../constants/image_constant.dart';
+import '../../../routes/app_pages.dart';
 import '../controllers/auth_controller.dart';
-import 'signup_view.dart';
-import 'login_view.dart';
 
 class AuthView extends GetView<AuthController> {
   const AuthView({super.key});
@@ -91,7 +90,7 @@ class AuthView extends GetView<AuthController> {
                     GestureDetector(
                       onTap: () {
                         // Navigate to login
-                        Get.to(() => const LoginView());
+                        Get.toNamed(Routes.LOGIN);
                       },
                       child: Container(
                         width: double.infinity,
@@ -122,7 +121,7 @@ class AuthView extends GetView<AuthController> {
                     GestureDetector(
                       onTap: () {
                         // Navigate to signup
-                        Get.to(() => const SignupView());
+                        Get.toNamed(Routes.SIGNUP);
                       },
                       child: Container(
                         width: double.infinity,

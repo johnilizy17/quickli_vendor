@@ -98,18 +98,18 @@ class SplashController extends GetxController {
           }
           
           // Navigate based on verification status
-          if (isFullyVerified || kycStatus == 'verified') {
-            // Fully verified - go to main app
-            appLog('SplashController: Vendor verified - navigating to wrapper');
+          if (isFullyVerified || kycStatus == 'verified' || kycStatus == 'approved') {
+            // Fully verified/approved - go to main app (home)
+            appLog('SplashController: Vendor approved/verified - navigating to home');
             Get.offAllNamed(Routes.WRAPPER);
           } else if (kycStatus == 'requested' && allStepsCompleted) {
             // Pending verification - all steps done, waiting for admin approval
-            appLog('SplashController: Verification pending - navigating to verification pending view');
-            Get.offAllNamed(Routes.VERIFICATION_PENDING);
+            appLog('SplashController: Verification pending - navigating to application status');
+            Get.offAllNamed(Routes.APPLICATION_STATUS);
           } else {
             // Incomplete onboarding or verification - needs to complete business documents
             appLog('SplashController: Verification incomplete - navigating to business docs');
-            Get.off(() => const BusinessDocsView());
+            Get.offAllNamed(Routes.BUSINESS_DOCS);
           }
         } else {
           // Invalid response - redirect to auth

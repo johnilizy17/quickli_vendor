@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../constants/color_constant.dart';
+import '../../../routes/app_pages.dart';
 import '../controllers/auth_controller.dart';
 
 class LoginView extends GetView<AuthController> {
@@ -76,6 +78,9 @@ class LoginView extends GetView<AuthController> {
                       () => TextField(
                         controller: controller.loginUsernameController,
                         keyboardType: TextInputType.emailAddress,
+                        inputFormatters: [
+                          LowerCaseTextFormatter(),
+                        ],
                         style: TextStyle(
                           fontSize: 14.sp,
                           color: ColorConstant.samantic,
@@ -245,7 +250,7 @@ class LoginView extends GetView<AuthController> {
                           : const SizedBox.shrink(),
                     ),
 
-                    SizedBox(height: 16.h),
+                    SizedBox(height: 30.h),
 
                     // Register and Forgot password links
                     Row(
@@ -259,7 +264,7 @@ class LoginView extends GetView<AuthController> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => Get.back(),
+                          onTap: () => Get.offNamed(Routes.SIGNUP),
                           child: Text(
                             'Register',
                             style: TextStyle(
@@ -278,12 +283,7 @@ class LoginView extends GetView<AuthController> {
                     Center(
                       child: GestureDetector(
                         onTap: () {
-                          // TODO: Navigate to forgot password
-                          Get.snackbar(
-                            'Coming Soon',
-                            'Forgot password feature will be available soon',
-                            snackPosition: SnackPosition.BOTTOM,
-                          );
+                          Get.toNamed('/password-reset');
                         },
                         child: Text(
                           'Forgot your password?',
@@ -345,6 +345,21 @@ class LoginView extends GetView<AuthController> {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+// Text formatter to convert all text to lowercase
+class LowerCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return TextEditingValue(
+      text: newValue.text.toLowerCase(),
+      selection: newValue.selection,
     );
   }
 }

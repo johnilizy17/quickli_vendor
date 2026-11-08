@@ -13,29 +13,56 @@ class OwnerVerificationView extends GetView<OwnerVerificationController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: ColorConstant.samantic),
-          onPressed: () => Get.back(),
-        ),
-        title: Text(
-          'Owner Verification',
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: ColorConstant.samantic,
+      body: Column(
+        children: [
+          // Header with SafeArea
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(20.w),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Get.back(),
+                    child: Icon(
+                      Icons.arrow_back_ios,
+                      size: 20.sp,
+                      color: ColorConstant.samantic,
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Owner Verification',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                            color: ColorConstant.samantic,
+                          ),
+                        ),
+                        SizedBox(height: 2.h),
+                        Text(
+                          'Verify your identity',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: ColorConstant.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
-      body: Form(
-        key: controller.formKey,
-        child: Column(
-          children: [
-            Expanded(
+          
+          Expanded(
+            child: Form(
+              key: controller.formKey,
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(20.w),
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -250,9 +277,11 @@ class OwnerVerificationView extends GetView<OwnerVerificationController> {
                 ),
               ),
             ),
+          ),
 
-            // Save Button
-            Container(
+          // Save Button with SafeArea
+          SafeArea(
+            child: Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -269,8 +298,8 @@ class OwnerVerificationView extends GetView<OwnerVerificationController> {
                 onPressed: controller.saveVerification,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

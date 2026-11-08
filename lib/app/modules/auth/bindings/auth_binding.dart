@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/business_registration_controller.dart';
 import '../controllers/business_info_controller.dart';
-import '../controllers/owner_verification_controller.dart';
+import '../../owner_verification/controllers/owner_verification_controller.dart';
 import '../controllers/business_docs_controller.dart';
 import '../controllers/bank_account_controller.dart';
 import '../controllers/tax_info_controller.dart';

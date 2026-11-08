@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -39,49 +40,125 @@ class BusinessInfoView extends GetView<BusinessInfoController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Display selected business type
+                    Obx(() => controller.selectedBusinessCategory.value.isNotEmpty
+                        ? Container(
+                            padding: EdgeInsets.all(12.w),
+                            margin: EdgeInsets.only(bottom: 20.h),
+                            decoration: BoxDecoration(
+                              color: ColorConstant.fadedPurpleAccent,
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                color: ColorConstant.brandColor.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40.w,
+                                  height: 40.w,
+                                  decoration: BoxDecoration(
+                                    color: ColorConstant.brandColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10.r),
+                                  ),
+                                  child: Icon(
+                                    controller.selectedBusinessCategory.value == 'restaurant'
+                                        ? Icons.restaurant_outlined
+                                        : Icons.shopping_basket_outlined,
+                                    color: ColorConstant.brandColor,
+                                    size: 20.sp,
+                                  ),
+                                ),
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Business Type',
+                                        style: TextStyle(
+                                          fontSize: 11.sp,
+                                          color: ColorConstant.darkGrey,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(height: 2.h),
+                                      Text(
+                                        controller.selectedBusinessCategory.value == 'restaurant'
+                                            ? 'Restaurant'
+                                            : 'Grocery / Supermarket',
+                                        style: TextStyle(
+                                          fontSize: 15.sp,
+                                          fontWeight: FontWeight.w600,
+                                          color: ColorConstant.brandColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.check_circle,
+                                  color: ColorConstant.brandColor,
+                                  size: 20.sp,
+                                ),
+                              ],
+                            ),
+                          )
+                        : const SizedBox.shrink()),
+
                     // Business Logo
                     Center(
                       child: GestureDetector(
                         onTap: controller.pickLogo,
                         child: Obx(
-                          () => Container(
-                            width: 100.w,
-                            height: 100.w,
-                            decoration: BoxDecoration(
-                              color: ColorConstant.lightestGrey,
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(
-                                color: ColorConstant.borderColor,
-                                width: 2,
+                          () {
+                            final logoPathValue = controller.logoPath.value;
+                            final hasLogo = logoPathValue.isNotEmpty;
+                            final isNetworkImage = hasLogo && (logoPathValue.startsWith('http://') || logoPathValue.startsWith('https://'));
+                            final isLocalFile = hasLogo && !isNetworkImage;
+                            
+                            return Container(
+                              width: 100.w,
+                              height: 100.w,
+                              decoration: BoxDecoration(
+                                color: ColorConstant.lightestGrey,
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
+                                  color: ColorConstant.borderColor,
+                                  width: 2,
+                                ),
+                                image: hasLogo
+                                    ? DecorationImage(
+                                        image: isNetworkImage
+                                            ? NetworkImage(logoPathValue)
+                                            : FileImage(File(logoPathValue)) as ImageProvider,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
                               ),
-                              image: controller.logoPath.value.isNotEmpty
-                                  ? DecorationImage(
-                                      image: NetworkImage(controller.logoPath.value),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                            child: controller.logoPath.value.isEmpty
-                                ? Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.add_photo_alternate_outlined,
-                                        size: 32.sp,
-                                        color: ColorConstant.darkGrey,
-                                      ),
-                                      SizedBox(height: 4.h),
-                                      Text(
-                                        'Add Logo',
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
+                              child: !hasLogo
+                                  ? Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.add_photo_alternate_outlined,
+                                          size: 32.sp,
                                           color: ColorConstant.darkGrey,
                                         ),
-                                      ),
-                                    ],
-                                  )
-                                : null,
-                          ),
+                                        SizedBox(height: 4.h),
+                                        Text(
+                                          'Add Logo',
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: ColorConstant.darkGrey,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : null,
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -375,7 +452,18 @@ class BusinessInfoView extends GetView<BusinessInfoController> {
               ),
               child: CustomButton(
                 text: 'Save & Continue',
-                onPressed: controller.saveBusinessInfo,
+                // Old single-page flow - replaced by 5-step flow
+                // Use BusinessTypeSelectionView instead
+                onPressed: () {
+                  Get.snackbar(
+                    'Notice',
+                    'Please use the new 5-step business registration flow from Business Documents',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.orange,
+                    colorText: Colors.white,
+                  );
+                  Get.back();
+                },
               ),
             ),
           ],

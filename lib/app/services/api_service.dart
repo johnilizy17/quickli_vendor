@@ -20,7 +20,10 @@ class ApiService extends GetxService {
       baseUrl: AppConfig.baseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
     ));
     _dio.interceptors.add(_AuthInterceptor(_box));
     appLog('ApiService: baseUrl=${AppConfig.baseUrl} env=${AppConfig.envName}');
@@ -78,13 +81,33 @@ class _AuthInterceptor extends Interceptor {
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
+    
+    // Log request details
+    appLog('🌐 API Request: ${options.method} ${options.baseUrl}${options.path}');
+    appLog('🌐 Request Headers: ${options.headers}');
+    if (options.data != null) {
+      appLog('🌐 Request Body: ${options.data}');
+    }
+    
     handler.next(options);
   }
 
   @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    appLog('✅ API Response [${response.statusCode}] ${response.requestOptions.method} ${response.requestOptions.path}');
+    appLog('✅ Response Data: ${response.data}');
+    handler.next(response);
+  }
+
+  @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    appLog('API [${err.response?.statusCode}] ${err.requestOptions.method} '
+    appLog('❌ API Error [${err.response?.statusCode}] ${err.requestOptions.method} '
         '${err.requestOptions.path}');
+    appLog('❌ Error Type: ${err.type}');
+    appLog('❌ Error Message: ${err.message}');
+    if (err.response != null) {
+      appLog('❌ Response Data: ${err.response?.data}');
+    }
     handler.next(err);
   }
 }
