@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:country_picker/country_picker.dart';
 import '../../../constants/api_route.dart';
 import '../../../models/vendor_user.dart';
 import '../../../routes/app_pages.dart';
@@ -32,6 +33,22 @@ class AuthController extends GetxController {
   final obscurePassword = true.obs;
   final obscureLoginPassword = true.obs;
   
+  // Country selection for phone
+  final selectedCountry = Rx<Country>(
+    Country(
+      phoneCode: '234',
+      countryCode: 'NG',
+      e164Sc: 0,
+      geographic: true,
+      level: 1,
+      name: 'Nigeria',
+      example: '8021234567',
+      displayName: 'Nigeria (NG) [+234]',
+      displayNameNoCountryCode: 'Nigeria (NG)',
+      e164Key: '',
+    ),
+  );
+  
   // OTP resend timer
   final canResendOtp = false.obs;
   final resendTimer = 60.obs;
@@ -60,6 +77,9 @@ class AuthController extends GetxController {
   final passwordStrength = ''.obs; // 'Too weak', 'Weak', 'Good', 'Strong', ''
   final passwordStrengthColor = Rx<Color>(Colors.transparent);
   
+  // Email OTP validation
+  final isEmailOtpValid = false.obs;
+  
   @override
   void onInit() {
     super.onInit();
@@ -69,6 +89,13 @@ class AuthController extends GetxController {
     emailController.addListener(_handleEmailChange);
     // Listen to phone changes for live validation
     phoneNumberController.addListener(_validatePhoneLive);
+    // Listen to email OTP changes
+    emailOtpController.addListener(_validateEmailOtpLive);
+  }
+  
+  void _validateEmailOtpLive() {
+    final code = emailOtpController.text.trim();
+    isEmailOtpValid.value = code.length == 6;
   }
   
   void _handleEmailChange() {

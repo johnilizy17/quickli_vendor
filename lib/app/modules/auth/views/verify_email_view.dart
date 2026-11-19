@@ -29,7 +29,7 @@ class VerifyEmailView extends GetView<AuthController> {
           child: Column(
             children: [
               // Top area with background
-              SizedBox(height: 100.h),
+              SizedBox(height: 180.h),
               
               // White rounded container
               Expanded(
@@ -51,31 +51,28 @@ class VerifyEmailView extends GetView<AuthController> {
                         
                         // Title
                         Text(
-                          'Email Verification',
+                          'Verification code sent to',
                           style: TextStyle(
-                            fontSize: 24.sp,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.w600,
                             color: ColorConstant.samantic,
                           ),
                         ),
-                        SizedBox(height: 12.h),
+                        SizedBox(height: 4.h),
                         
                         // Description
                         RichText(
                           text: TextSpan(
                             style: TextStyle(
-                              fontSize: 14.sp,
-                              color: ColorConstant.darkGrey,
+                              fontSize: 18.sp,
+                              color: ColorConstant.black,
                             ),
                             children: [
-                              const TextSpan(
-                                text: 'We have sent a verification code to ',
-                              ),
                               TextSpan(
                                 text: email,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
-                                  color: ColorConstant.samantic,
+                                  color: ColorConstant.black,
                                 ),
                               ),
                             ],
@@ -93,12 +90,12 @@ class VerifyEmailView extends GetView<AuthController> {
                             style: TextStyle(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
-                              color: ColorConstant.brandColor,
+                              color: ColorConstant.gradientStart,
                             ),
                           ),
                         ),
                         
-                        SizedBox(height: 32.h),
+                        SizedBox(height: 24.h),
                         
                         // Instruction text
                         Text(
@@ -109,7 +106,7 @@ class VerifyEmailView extends GetView<AuthController> {
                           ),
                         ),
                         
-                        SizedBox(height: 24.h),
+                        SizedBox(height: 8.h),
                         
                         // OTP Input
                         Pinput(
@@ -125,10 +122,9 @@ class VerifyEmailView extends GetView<AuthController> {
                               color: ColorConstant.samantic,
                             ),
                             decoration: BoxDecoration(
-                              color: ColorConstant.lightestGrey,
                               borderRadius: BorderRadius.circular(12.r),
                               border: Border.all(
-                                color: Colors.transparent,
+                                color: ColorConstant.whiteSnow,
                                 width: 1,
                               ),
                             ),
@@ -190,17 +186,18 @@ class VerifyEmailView extends GetView<AuthController> {
                           },
                         ),
                         
-                        SizedBox(height: 24.h),
+                        SizedBox(height: 4.h),
                         
                         // Resend code link
                         Obx(() => Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Text(
-                              "Didn't receive the code? ",
+                             !controller.canResendEmailOtp.value?
+                                     "Resend code in ":"",
                               style: TextStyle(
-                                fontSize: 14.sp,
-                                color: ColorConstant.darkGrey,
+                                fontSize: 12.sp,
+                                color: ColorConstant.greyDark,
                               ),
                             ),
                             GestureDetector(
@@ -210,13 +207,11 @@ class VerifyEmailView extends GetView<AuthController> {
                               child: Text(
                                 controller.canResendEmailOtp.value
                                     ? 'Resend Code'
-                                    : 'Resend in ${controller.resendEmailTimer.value}s',
+                                    : '${controller.resendEmailTimer.value}s',
                                 style: TextStyle(
-                                  fontSize: 14.sp,
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w600,
-                                  color: controller.canResendEmailOtp.value
-                                      ? ColorConstant.brandColor
-                                      : ColorConstant.darkGrey,
+                                  color:  ColorConstant.gradientStart
                                 ),
                               ),
                             ),
@@ -226,54 +221,49 @@ class VerifyEmailView extends GetView<AuthController> {
                         SizedBox(height: 32.h),
                         
                         // Verify button
-                        Obx(() => GestureDetector(
-                          onTap: controller.isLoading.value
-                              ? null
-                              : () {
-                                  final pin = controller.emailOtpController.text;
-                                  if (pin.length == 6) {
+                        Obx(() {
+                          final isDisabled = !controller.isEmailOtpValid.value || 
+                                           controller.isLoading.value;
+                          
+                          return GestureDetector(
+                            onTap: isDisabled
+                                ? null
+                                : () {
+                                    final pin = controller.emailOtpController.text;
                                     controller.verifyEmail(pin);
-                                  } else {
-                                    Get.snackbar(
-                                      'Error',
-                                      'Please enter the 6-digit code',
-                                      snackPosition: SnackPosition.BOTTOM,
-                                      backgroundColor: Colors.red,
-                                      colorText: Colors.white,
-                                    );
-                                  }
-                                },
-                          child: Container(
-                            width: double.infinity,
-                            height: 56.h,
-                            decoration: BoxDecoration(
-                              color: controller.isLoading.value
-                                  ? ColorConstant.brandColor.withOpacity(0.6)
-                                  : ColorConstant.brandColor,
-                              borderRadius: BorderRadius.circular(16.r),
-                            ),
-                            alignment: Alignment.center,
-                            child: controller.isLoading.value
-                                ? SizedBox(
-                                    width: 24.w,
-                                    height: 24.w,
-                                    child: const CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
+                                  },
+                            child: Container(
+                              width: double.infinity,
+                              height: 56.h,
+                              decoration: BoxDecoration(
+                                color: isDisabled
+                                    ? ColorConstant.brandColor.withOpacity(0.4)
+                                    : ColorConstant.brandColor,
+                                borderRadius: BorderRadius.circular(16.r),
+                              ),
+                              alignment: Alignment.center,
+                              child: controller.isLoading.value
+                                  ? SizedBox(
+                                      width: 24.w,
+                                      height: 24.w,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Verify Email',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                  )
-                                : Text(
-                                    'Verify Email',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                          ),
-                        )),
+                            ),
+                          );
+                        }),
                         
                         SizedBox(height: 16.h),
                         
@@ -284,10 +274,12 @@ class VerifyEmailView extends GetView<AuthController> {
                             text: TextSpan(
                               style: TextStyle(
                                 fontSize: 12.sp,
-                                color: ColorConstant.darkGrey,
+                                color: ColorConstant.deepGrey,
                               ),
                               children: [
-                                const TextSpan(text: 'By continuing, you agree to our '),
+                                const TextSpan(text: 'By continuing, you agree to our ',  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  )),
                                 TextSpan(
                                   text: 'Terms of Service',
                                   style: TextStyle(
