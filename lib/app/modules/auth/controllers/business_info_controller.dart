@@ -80,6 +80,10 @@ class BusinessInfoController extends GetxController {
     final isDescriptionFilled = descriptionController.text.trim().isNotEmpty;
     
     isBusinessDetailsValid.value = isNameFilled && isDescriptionFilled;
+    
+    print('[VALIDATION] Business name filled: $isNameFilled');
+    print('[VALIDATION] Description filled: $isDescriptionFilled');
+    print('[VALIDATION] Form valid: ${isBusinessDetailsValid.value}');
   }
 
   Future<void> _initializeLocation() async {

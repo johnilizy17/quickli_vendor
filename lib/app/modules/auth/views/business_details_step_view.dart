@@ -377,8 +377,11 @@ class BusinessDetailsStepView extends GetView<BusinessInfoController> {
             ],
           ),
         child: Obx(() {
-          final isDisabled = !controller.isBusinessDetailsValid.value || 
-                           controller.isLoading.value;
+          final isValid = controller.isBusinessDetailsValid.value;
+          final isLoading = controller.isLoading.value;
+          final isDisabled = !isValid || isLoading;
+          
+          print('[BUTTON] isValid: $isValid, isLoading: $isLoading, isDisabled: $isDisabled');
           
           return GestureDetector(
             onTap: isDisabled
