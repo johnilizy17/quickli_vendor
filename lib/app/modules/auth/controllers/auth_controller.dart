@@ -373,7 +373,23 @@ class AuthController extends GetxController {
           if (responseData != null && responseData is Map) {
             final message = responseData['message'];
             if (message != null && message.toString().isNotEmpty) {
-              errorMessage = message.toString();
+              final rawMessage = message.toString().toLowerCase();
+              
+              // Convert technical error codes to user-friendly messages
+              if (rawMessage.contains('validation_error') || 
+                  rawMessage.contains('invalid credentials') ||
+                  rawMessage.contains('invalid password')) {
+                errorMessage = 'Invalid email/phone or password';
+              } else if (rawMessage.contains('not found') || 
+                         rawMessage.contains('user not found') ||
+                         rawMessage.contains('account not found')) {
+                errorMessage = 'Account not found';
+              } else if (rawMessage.contains('unauthorized')) {
+                errorMessage = 'Invalid email/phone or password';
+              } else {
+                // Use the message as-is if it's already user-friendly
+                errorMessage = message.toString();
+              }
             } else {
               // Fallback based on status code
               if (statusCode == 401 || statusCode == 403) {
