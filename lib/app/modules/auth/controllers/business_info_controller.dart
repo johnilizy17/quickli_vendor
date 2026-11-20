@@ -247,6 +247,9 @@ class BusinessInfoController extends GetxController {
       }
       
       print('[LOAD] ✅ Form fields populated with saved data');
+      
+      // Trigger validation after loading data
+      _validateBusinessDetails();
     } catch (e) {
       print('[LOAD] ❌ Error loading saved data: $e');
       // Continue with empty form - not a critical error

@@ -389,7 +389,7 @@ class BusinessDetailsStepView extends GetView<BusinessInfoController> {
               height: 56.h,
               decoration: BoxDecoration(
                 color: isDisabled
-                    ? ColorConstant.brandColor.withOpacity(0.4)
+                    ? const Color(0xFF9FA0B0)
                     : ColorConstant.brandColor,
                 borderRadius: BorderRadius.circular(16.r),
               ),
