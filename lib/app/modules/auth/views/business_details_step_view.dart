@@ -10,7 +10,7 @@ class BusinessDetailsStepView extends GetView<BusinessInfoController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ColorConstant.lightestGrey,
+      backgroundColor: ColorConstant.white,
       body: Column(
         children: [
           // Header with SafeArea
@@ -35,8 +35,8 @@ class BusinessDetailsStepView extends GetView<BusinessInfoController> {
                         Text(
                           'Business information',
                           style: TextStyle(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
                             color: ColorConstant.samantic,
                           ),
                         ),
@@ -44,8 +44,8 @@ class BusinessDetailsStepView extends GetView<BusinessInfoController> {
                         Text(
                           'Tell customers about your business',
                           style: TextStyle(
-                            fontSize: 13.sp,
-                            color: ColorConstant.darkGrey,
+                            fontSize: 12.sp,
+                            color: ColorConstant.black,
                           ),
                         ),
                       ],
@@ -62,73 +62,7 @@ class BusinessDetailsStepView extends GetView<BusinessInfoController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Display selected business type
-                  Obx(() => controller.selectedBusinessCategory.value.isNotEmpty
-                      ? Container(
-                          padding: EdgeInsets.all(12.w),
-                          margin: EdgeInsets.only(bottom: 20.h),
-                          decoration: BoxDecoration(
-                            color: ColorConstant.fadedPurpleAccent,
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(
-                              color: ColorConstant.brandColor.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 40.w,
-                                height: 40.w,
-                                decoration: BoxDecoration(
-                                  color: ColorConstant.brandColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(10.r),
-                                ),
-                                child: Icon(
-                                  controller.selectedBusinessCategory.value == 'restaurant'
-                                      ? Icons.restaurant_outlined
-                                      : Icons.shopping_basket_outlined,
-                                  color: ColorConstant.brandColor,
-                                  size: 20.sp,
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Business Type',
-                                      style: TextStyle(
-                                        fontSize: 11.sp,
-                                        color: ColorConstant.darkGrey,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2.h),
-                                    Text(
-                                      controller.selectedBusinessCategory.value == 'restaurant'
-                                          ? 'Restaurant'
-                                          : 'Grocery / Supermarket',
-                                      style: TextStyle(
-                                        fontSize: 15.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: ColorConstant.brandColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                Icons.check_circle,
-                                color: ColorConstant.brandColor,
-                                size: 20.sp,
-                              ),
-                            ],
-                          ),
-                        )
-                      : const SizedBox.shrink()),
-
+                  // Display selected business type 
                   Text(
                     'Tell us about your business?',
                     style: TextStyle(
@@ -442,39 +376,44 @@ class BusinessDetailsStepView extends GetView<BusinessInfoController> {
               ),
             ],
           ),
-        child: Obx(() => GestureDetector(
-          onTap: controller.isLoading.value 
-              ? null 
-              : () => controller.saveBusinessDetailsAndContinue(),
-          child: Container(
-            width: double.infinity,
-            height: 56.h,
-            decoration: BoxDecoration(
-              color: controller.isLoading.value 
-                  ? ColorConstant.brandColor.withOpacity(0.6)
-                  : ColorConstant.brandColor,
-              borderRadius: BorderRadius.circular(16.r),
+        child: Obx(() {
+          final isDisabled = !controller.isBusinessDetailsValid.value || 
+                           controller.isLoading.value;
+          
+          return GestureDetector(
+            onTap: isDisabled
+                ? null
+                : () => controller.saveBusinessDetailsAndContinue(),
+            child: Container(
+              width: double.infinity,
+              height: 56.h,
+              decoration: BoxDecoration(
+                color: isDisabled
+                    ? ColorConstant.brandColor.withOpacity(0.4)
+                    : ColorConstant.brandColor,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              alignment: Alignment.center,
+              child: controller.isLoading.value
+                  ? SizedBox(
+                      width: 24.w,
+                      height: 24.w,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      'Continue',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
-            alignment: Alignment.center,
-            child: controller.isLoading.value
-                ? SizedBox(
-                    width: 24.w,
-                    height: 24.w,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : Text(
-                    'Continue',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-          ),
-        )),
+          );
+        }),
         ),
       ),
     );

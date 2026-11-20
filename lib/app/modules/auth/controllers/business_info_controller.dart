@@ -40,6 +40,9 @@ class BusinessInfoController extends GetxController {
   final isSubmitting = false.obs;
   final isLoading = false.obs;
   
+  // Form validation for business details
+  final isBusinessDetailsValid = false.obs;
+  
   // Location fields with map support
   final currentLat = 6.4281.obs;
   final currentLng = 3.4219.obs;
@@ -66,6 +69,17 @@ class BusinessInfoController extends GetxController {
     super.onInit();
     loadSavedData();
     _initializeLocation();
+    
+    // Add listeners for business details validation
+    businessNameController.addListener(_validateBusinessDetails);
+    descriptionController.addListener(_validateBusinessDetails);
+  }
+  
+  void _validateBusinessDetails() {
+    final isNameFilled = businessNameController.text.trim().isNotEmpty;
+    final isDescriptionFilled = descriptionController.text.trim().isNotEmpty;
+    
+    isBusinessDetailsValid.value = isNameFilled && isDescriptionFilled;
   }
 
   Future<void> _initializeLocation() async {
