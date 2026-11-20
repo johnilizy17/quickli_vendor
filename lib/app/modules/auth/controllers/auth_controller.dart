@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:country_picker/country_picker.dart';
@@ -358,17 +359,35 @@ class AuthController extends GetxController {
       String errorMessage = 'An error occurred. Please try again.';
       
       // Check if it's a DioException with response
-      if (e.toString().contains('DioException')) {
-        final errorStr = e.toString();
-        appLog('DioException details: $errorStr');
+      if (e is DioException) {
+        appLog('DioException caught');
         
-        // Try to extract status code
-        if (errorStr.contains('statusCode:')) {
-          final statusMatch = RegExp(r'statusCode:\s*(\d+)').firstMatch(errorStr);
-          if (statusMatch != null) {
-            final statusCode = int.tryParse(statusMatch.group(1) ?? '');
-            appLog('Status code: $statusCode');
-            
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+          
+          appLog('Status code: $statusCode');
+          appLog('Response data: $responseData');
+          
+          // Try to extract message from response data
+          if (responseData != null && responseData is Map) {
+            final message = responseData['message'];
+            if (message != null && message.toString().isNotEmpty) {
+              errorMessage = message.toString();
+            } else {
+              // Fallback based on status code
+              if (statusCode == 401 || statusCode == 403) {
+                errorMessage = 'Invalid email/phone or password';
+              } else if (statusCode == 404) {
+                errorMessage = 'Account not found';
+              } else if (statusCode == 429) {
+                errorMessage = 'Too many attempts. Please try again later.';
+              } else if (statusCode != null && statusCode >= 500) {
+                errorMessage = 'Server error. Please try again later.';
+              }
+            }
+          } else {
+            // Fallback based on status code
             if (statusCode == 401 || statusCode == 403) {
               errorMessage = 'Invalid email/phone or password';
             } else if (statusCode == 404) {
@@ -379,20 +398,16 @@ class AuthController extends GetxController {
               errorMessage = 'Server error. Please try again later.';
             }
           }
-        }
-        
-        // Try to extract message from response data
-        if (errorStr.contains('message:')) {
-          try {
-            final msgMatch = RegExp(r'message:\s*([^,}]+)').firstMatch(errorStr);
-            if (msgMatch != null) {
-              final msg = msgMatch.group(1)?.trim().replaceAll('"', '');
-              if (msg != null && msg.isNotEmpty) {
-                errorMessage = msg;
-              }
-            }
-          } catch (parseError) {
-            appLog('Error parsing message: $parseError');
+        } else {
+          // No response - likely a network error
+          if (e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.sendTimeout ||
+              e.type == DioExceptionType.receiveTimeout) {
+            errorMessage = 'Connection timeout. Please try again.';
+          } else if (e.type == DioExceptionType.connectionError) {
+            errorMessage = 'Network error. Please check your connection.';
+          } else {
+            errorMessage = 'Unable to connect to server. Please try again.';
           }
         }
       } else if (e.toString().contains('SocketException') || 
